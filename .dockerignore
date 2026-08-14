@@ -3,6 +3,13 @@
 .dockerignore
 README.md
 DEPLOY.md
+
+# Kept in the repository for local setup, but never shipped to a public host:
+# both accept an unauthenticated POST that re-runs the schema and resets the
+# administrator password. To re-run one against the deployed site, comment the
+# line out, deploy, use it, then restore it and deploy again.
+install.php
+upgrade.php
 uploads/**
 !uploads/**/.gitkeep
 *.log

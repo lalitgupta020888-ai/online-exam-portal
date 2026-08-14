@@ -28,50 +28,91 @@ every page.
 
 ## Railway
 
-1. **Create the project.** On [railway.app](https://railway.app) choose
-   *New Project* > *Deploy from GitHub repo* and pick `online-exam-portal`.
-   Railway detects the `Dockerfile` and builds it - no build settings to fill in.
+The project is deployed and live at **https://onlineexam.up.railway.app**.
 
-2. **Add the database.** In the same project click *New* > *Database* >
-   *Add MySQL*. This creates a second service on the project's private network.
+Two services sit in the Railway project `online-exam-portal`:
 
-3. **Wire the two together.** Open the **app** service > *Variables* and add:
+| Service | What it is |
+|---|---|
+| `online-exam` | This app, built from the `Dockerfile`, volume at `/var/www/html/uploads` |
+| `MySQL` | MySQL 9.4, volume at `/var/lib/mysql` |
 
-   ```
-   DB_HOST      = ${{MySQL.MYSQLHOST}}
-   DB_PORT      = ${{MySQL.MYSQLPORT}}
-   DB_USER      = ${{MySQL.MYSQLUSER}}
-   DB_PASS      = ${{MySQL.MYSQLPASSWORD}}
-   DB_NAME      = online_exam
-   APP_DEBUG    = 0
-   ```
+The app service is configured with these variables. The `${{MySQL.*}}` form is
+Railway's reference syntax: it reads the live value from the MySQL service, so
+nothing is copied by hand and rotating the database password does not break the
+app.
 
-   The `${{MySQL.*}}` form is Railway's reference syntax - it pulls the live
-   value from the MySQL service, so nothing is copied by hand and rotating the
-   database password does not break the app.
+```
+DB_HOST   = ${{MySQL.MYSQLHOST}}
+DB_PORT   = ${{MySQL.MYSQLPORT}}
+DB_USER   = ${{MySQL.MYSQLUSER}}
+DB_PASS   = ${{MySQL.MYSQLPASSWORD}}
+DB_NAME   = online_exam
+APP_DEBUG = 0
+PORT      = 8080
+```
 
-4. **Expose the app.** App service > *Settings* > *Networking* >
-   *Generate Domain*. You get a `*.up.railway.app` URL.
+`PORT` is set explicitly because the generated domain forwards to port 8080,
+while the Apache base image is hard-wired to 80. The entrypoint rewrites
+Apache's `Listen` directive to whatever `PORT` says.
 
-5. **Create the schema.** Visit `https://<your-domain>/install.php` once and
-   press the install button. It runs `database/schema.sql`, applies the faculty
-   and college migrations, and creates the two seed accounts:
+### Redeploying
 
-   | Role | Username / email | Password |
-   |---|---|---|
-   | Administrator | `admin` | `admin123` |
-   | Demo student | `student@example.com` | `student123` |
+```bash
+railway up --service online-exam
+```
 
-6. **Lock it down.** Change both passwords immediately, then delete
-   `install.php` and `upgrade.php` from the repo and push - they re-run schema
-   changes and must not sit on a public URL.
+This uploads the working directory and rebuilds, so it deploys local changes -
+committed or not. Push to GitHub separately.
+
+### Recreating the project from scratch
+
+```bash
+railway init --name online-exam-portal
+railway add --database mysql
+railway add --service online-exam
+railway variables --service online-exam \
+  --set 'DB_HOST=${{MySQL.MYSQLHOST}}' --set 'DB_PORT=${{MySQL.MYSQLPORT}}' \
+  --set 'DB_USER=${{MySQL.MYSQLUSER}}' --set 'DB_PASS=${{MySQL.MYSQLPASSWORD}}' \
+  --set 'DB_NAME=online_exam' --set 'APP_DEBUG=0' --set 'PORT=8080'
+railway volume add --mount-path /var/www/html/uploads
+railway domain --service online-exam --port 8080
+railway up --service online-exam
+```
+
+Then run the installer once - see below.
+
+## Running the installer on a deployed site
+
+`install.php` and `upgrade.php` are listed in `.dockerignore`, so they are
+**not** shipped to the server. Both accept an unauthenticated POST that re-runs
+the schema and resets the administrator password back to `admin123`; on a public
+URL that is an open door to anyone who guesses the filename.
+
+The schema on the live site has already been created. To run one of them again:
+comment its line out of `.dockerignore`, `railway up`, use it, then restore the
+line and `railway up` again.
+
+The installer seeds two accounts:
+
+| Role | Username / email | Password |
+|---|---|---|
+| Administrator | `admin` | `admin123` |
+| Demo student | `student@example.com` | `student123` |
+
+**Change both passwords** - the defaults are published in this file and in the
+repository's history.
 
 ## Uploaded files
 
 Container filesystems are wiped on every redeploy, so college logos written to
-`uploads/logos/` would not survive one. To keep them, add a Railway **Volume**
-to the app service mounted at `/var/www/html/uploads`. Without a volume the app
-still works - only the uploaded images are lost on redeploy.
+`uploads/logos/` would not survive one. A Railway volume is mounted at
+`/var/www/html/uploads` to keep them.
+
+A mounted volume replaces the directory baked into the image and arrives owned
+by `root`, so the `Dockerfile`'s build-time `chown` does not apply to it. The
+entrypoint re-creates `uploads/logos` and chowns it to `www-data` on every boot;
+without that, Apache cannot write logos to the volume.
 
 ## Local development
 
