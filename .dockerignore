@@ -1,0 +1,8 @@
+.git
+.gitignore
+.dockerignore
+README.md
+DEPLOY.md
+uploads/**
+!uploads/**/.gitkeep
+*.log

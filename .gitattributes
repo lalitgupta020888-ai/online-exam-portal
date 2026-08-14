@@ -1,0 +1,12 @@
+# Normalise text files in the repository, checkout native on Windows.
+* text=auto
+
+# These are read by Linux inside the container. A CRLF line ending on the
+# shebang line makes the kernel look for an interpreter called "/bin/sh\r",
+# which fails with "no such file or directory" - so pin them to LF.
+*.sh          text eol=lf
+Dockerfile    text eol=lf
+docker-entrypoint.sh text eol=lf
+
+# Keep SQL dumps byte-stable across platforms.
+*.sql         text eol=lf

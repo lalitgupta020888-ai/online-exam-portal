@@ -5,11 +5,34 @@
  */
 
 // ---------- Database ----------
-define('DB_HOST', '127.0.0.1');
-define('DB_PORT', '3306');
-define('DB_NAME', 'online_exam');
-define('DB_USER', 'root');
-define('DB_PASS', '');          // default XAMPP MySQL password is empty
+/**
+ * Read from the environment when the host provides it (any cloud deploy),
+ * otherwise fall back to the stock XAMPP values for local development.
+ *
+ * Several keys may be given: the first one the host has set wins. Railway
+ * publishes its MySQL credentials as MYSQLHOST / MYSQLUSER / MYSQLPASSWORD,
+ * so those are accepted as aliases of the plain DB_* names.
+ */
+function env_or($keys, string $fallback): string
+{
+    foreach ((array) $keys as $key) {
+        $value = getenv($key);
+        if ($value !== false && $value !== '') {
+            return $value;
+        }
+    }
+    return $fallback;
+}
+
+define('DB_HOST', env_or(['DB_HOST', 'MYSQLHOST'], '127.0.0.1'));
+define('DB_PORT', env_or(['DB_PORT', 'MYSQLPORT'], '3306'));
+define('DB_USER', env_or(['DB_USER', 'MYSQLUSER'], 'root'));
+define('DB_PASS', env_or(['DB_PASS', 'MYSQLPASSWORD'], ''));  // XAMPP default is empty
+
+// Deliberately NOT aliased to Railway's MYSQLDATABASE (which is "railway"):
+// database/schema.sql creates and populates a database called online_exam,
+// so the app must look in that one or it would connect to an empty schema.
+define('DB_NAME', env_or('DB_NAME', 'online_exam'));
 
 // ---------- Application ----------
 define('APP_NAME', 'Online Exam Portal');
@@ -44,8 +67,8 @@ define('FACULTY_SELF_APPROVE', false);
 // Minimum password length used by every registration / change password form.
 define('MIN_PASSWORD_LENGTH', 6);
 
-// Show PHP errors while developing locally. Set to false for production.
-define('DEBUG_MODE', true);
+// Show PHP errors while developing locally. Set APP_DEBUG=0 in production.
+define('DEBUG_MODE', env_or('APP_DEBUG', '1') === '1');
 
 if (DEBUG_MODE) {
     error_reporting(E_ALL);
