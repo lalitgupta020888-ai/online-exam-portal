@@ -1,0 +1,14 @@
+# Uploaded files (user content, not source)
+uploads/**
+!uploads/**/.gitkeep
+
+# Editor / OS cruft
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+*.swp
+
+# Local logs and dumps
+*.log
+*.sql.bak
