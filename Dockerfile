@@ -8,6 +8,12 @@ RUN docker-php-ext-install pdo_mysql \
     && a2enmod rewrite \
     && rm -rf /var/lib/apt/lists/*
 
+# Apache refuses to boot with "More than one MPM loaded" if both the event
+# and prefork modules end up enabled. mod_php is not thread safe, so pin the
+# server to prefork and drop the others explicitly.
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true; \
+    a2enmod mpm_prefork
+
 # Recommended production PHP settings, plus room for question-paper uploads.
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
     && printf 'upload_max_filesize=16M\npost_max_size=16M\n' \
