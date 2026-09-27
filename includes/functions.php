@@ -102,7 +102,7 @@ function json_out(array $data, int $status = 200): void
  *
  * @return array<string,string> field => message (empty when the password is fine)
  */
-function password_errors(string $password, string $confirm, string $current = null): array
+function password_errors(string $password, string $confirm, ?string $current = null): array
 {
     $errors = [];
 
