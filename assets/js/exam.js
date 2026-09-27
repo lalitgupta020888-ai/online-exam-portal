@@ -362,6 +362,103 @@
     doSubmit(false);
   });
 
+  /*
+   * Tab / window switch. A page cannot stop the switch itself, so the
+   * question is asked the moment the student comes back: "Yes" submits the
+   * paper, "No" keeps them on it.
+   */
+  var tabSwitchModal = new bootstrap.Modal(document.getElementById('tabSwitchModal'));
+  var leftExam = false;
+
+  document.addEventListener('visibilitychange', function () {
+    if (submitted) { return; }
+    if (document.hidden) {
+      leftExam = true;
+      return;
+    }
+    if (leftExam) {
+      leftExam = false;
+      submitModal.hide();
+      tabSwitchModal.show();
+    }
+  });
+
+  document.getElementById('btnTabStay').addEventListener('click', function () {
+    tabSwitchModal.hide();
+  });
+
+  document.getElementById('btnTabSubmit').addEventListener('click', function () {
+    tabSwitchModal.hide();
+    // Flush the answer on screen first so nothing typed is lost.
+    saveQuestion(current).then(function () { doSubmit(false); });
+  });
+
+  /*
+   * Screenshot protection. A web page cannot stop the operating system from
+   * capturing the screen, so the paper is blanked whenever a capture is
+   * likely: the window loses focus (snipping tools take focus first), or
+   * the Windows / Cmd or PrintScreen key goes down.
+   */
+  var shield = document.getElementById('examShield');
+  var shieldTimer = null;
+
+  function showShield(ms) {
+    shield.hidden = false;
+    window.clearTimeout(shieldTimer);
+    if (ms) { shieldTimer = window.setTimeout(hideShield, ms); }
+  }
+
+  function hideShield() {
+    window.clearTimeout(shieldTimer);
+    shield.hidden = true;
+  }
+
+  window.addEventListener('blur', function () { showShield(); });
+  window.addEventListener('focus', hideShield);
+  shield.addEventListener('click', hideShield);
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Meta' || ev.key === 'OS' || ev.key === 'PrintScreen') {
+      showShield();
+      return;
+    }
+    // Print, save, copy, cut and view-source shortcuts.
+    var k = (ev.key || '').toLowerCase();
+    if ((ev.ctrlKey || ev.metaKey) && ['p', 's', 'u'].indexOf(k) !== -1) {
+      ev.preventDefault();
+    }
+  }, true);
+
+  document.addEventListener('keyup', function (ev) {
+    if (ev.key === 'PrintScreen') {
+      // Overwrite whatever the key put on the clipboard.
+      if (navigator.clipboard) { navigator.clipboard.writeText('').catch(function () {}); }
+      showShield(1500);
+    } else if (ev.key === 'Meta' || ev.key === 'OS') {
+      showShield(800);
+    }
+  }, true);
+
+  function isAnswerBox(node) {
+    return node && (node.tagName === 'TEXTAREA' || node.tagName === 'INPUT');
+  }
+
+  ['copy', 'cut'].forEach(function (type) {
+    document.addEventListener(type, function (ev) {
+      if (!isAnswerBox(ev.target)) { ev.preventDefault(); }
+    });
+  });
+  document.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
+  document.addEventListener('dragstart', function (ev) { ev.preventDefault(); });
+
+  (function paintWatermark() {
+    var box = document.getElementById('examWatermark');
+    var html = '';
+    for (var i = 0; i < 60; i++) { html += '<span></span>'; }
+    box.innerHTML = html;
+    box.querySelectorAll('span').forEach(function (s) { s.textContent = CFG.watermark; });
+  })();
+
   /* Warn before the student navigates away from an unfinished exam. */
   window.addEventListener('beforeunload', function (ev) {
     if (submitted) { return; }

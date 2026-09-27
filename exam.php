@@ -75,7 +75,18 @@ $letters = ['A', 'B', 'C', 'D', 'E', 'F'];
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 <link href="<?= url('assets/css/style.css') ?>" rel="stylesheet">
 </head>
-<body>
+<body class="exam-protected">
+
+<!-- Blank cover shown while the paper must not be visible (screenshots). -->
+<div class="exam-shield" id="examShield" hidden>
+  <div>
+    <i class="bi bi-eye-slash display-5"></i>
+    <p class="mt-3 mb-0">The paper is hidden. Click here to continue your exam.</p>
+  </div>
+</div>
+
+<!-- Identifies the student on any photo or capture of the paper. -->
+<div class="exam-watermark" id="examWatermark" aria-hidden="true"></div>
 
 <!-- ============================ TOP BAR ============================ -->
 <header class="exam-topbar">
@@ -262,6 +273,31 @@ $letters = ['A', 'B', 'C', 'D', 'E', 'F'];
   </div>
 </div>
 
+<!-- ===================== TAB SWITCH MODAL ========================== -->
+<div class="modal fade" id="tabSwitchModal" tabindex="-1" data-bs-backdrop="static"
+     data-bs-keyboard="false" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 text-center">
+      <div class="modal-body p-4">
+        <i class="bi bi-exclamation-triangle text-warning display-4"></i>
+        <h4 class="mt-3 mb-2">You left the exam window</h4>
+        <p class="text-muted-2 mb-0">
+          Changing tabs or windows is not allowed during the examination.
+          Do you want to submit your paper now?
+        </p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-outline-secondary" id="btnTabStay">
+          No, return to paper
+        </button>
+        <button type="button" class="btn btn-danger" id="btnTabSubmit">
+          <i class="bi bi-check2-circle me-1"></i>Yes, submit paper
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ====================== TIME OVER MODAL ========================== -->
 <div class="modal fade" id="timeUpModal" tabindex="-1" data-bs-backdrop="static"
      data-bs-keyboard="false" aria-hidden="true">
@@ -284,6 +320,7 @@ window.EXAM_CONFIG = {
   secondsLeft: <?= (int)$remaining ?>,
   csrfToken:   <?= json_encode(csrf_token()) ?>,
   questions:   <?= json_encode($jsState) ?>,
+  watermark:   <?= json_encode($student['name'] . ' · ' . $student['email'] . ' · #' . $attemptId) ?>,
   urls: {
     save:   <?= json_encode(url('api/save_answer.php')) ?>,
     submit: <?= json_encode(url('api/submit_exam.php')) ?>,
