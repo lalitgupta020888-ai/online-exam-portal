@@ -12,3 +12,6 @@ desktop.ini
 # Local logs and dumps
 *.log
 *.sql.bak
+
+# Server-specific database details (see config/local.example.php)
+config/local.php

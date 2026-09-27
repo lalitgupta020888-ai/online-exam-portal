@@ -61,6 +61,22 @@ function split_sql(string $sql): array
     return $statements;
 }
 
+/**
+ * Statements of a bundled .sql file, minus its CREATE DATABASE / USE lines.
+ * Those name online_exam, but the tables belong in DB_NAME - which on
+ * shared hosting is a pre-made database the host has named.
+ */
+function sql_file_statements(string $file): array
+{
+    if (!is_readable($file)) {
+        throw new RuntimeException('Cannot read database/' . basename($file));
+    }
+    return array_values(array_filter(
+        split_sql(file_get_contents($file)),
+        function ($sql) { return !preg_match('/^\s*(CREATE\s+DATABASE|USE)\b/i', $sql); }
+    ));
+}
+
 /** True when $table already has a column named $column. */
 function column_exists(PDO $pdo, string $db, string $table, string $column): bool
 {

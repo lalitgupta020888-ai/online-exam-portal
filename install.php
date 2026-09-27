@@ -26,12 +26,17 @@ if ($run) {
         );
         $log[] = ['ok', 'Connected to MySQL at ' . DB_HOST . ':' . DB_PORT];
 
-        $file = __DIR__ . '/database/schema.sql';
-        if (!is_readable($file)) {
-            throw new RuntimeException('Cannot read database/schema.sql');
+        // Shared hosts forbid CREATE DATABASE and hand out a pre-made
+        // database under their own name, so the tables go into DB_NAME.
+        try {
+            $pdo->exec('CREATE DATABASE IF NOT EXISTS `' . DB_NAME . '`
+                        DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+        } catch (PDOException $e) {
+            // No permission - the host must have created DB_NAME already.
         }
+        $pdo->exec('USE `' . DB_NAME . '`');
 
-        $statements = split_sql(file_get_contents($file));
+        $statements = sql_file_statements(__DIR__ . '/database/schema.sql');
         foreach ($statements as $sql) {
             $pdo->exec($sql);
         }

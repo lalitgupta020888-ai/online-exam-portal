@@ -6,6 +6,16 @@
 
 // ---------- Database ----------
 /**
+ * Shared hosting (InfinityFree and the like) has no environment variables,
+ * so a server's database details go in config/local.php instead: it may
+ * define any of DB_HOST, DB_PORT, DB_USER, DB_PASS and DB_NAME. The file is
+ * not committed - copy config/local.example.php to create it.
+ */
+if (is_readable(__DIR__ . '/local.php')) {
+    require __DIR__ . '/local.php';
+}
+
+/**
  * Read from the environment when the host provides it (any cloud deploy),
  * otherwise fall back to the stock XAMPP values for local development.
  *
@@ -24,15 +34,15 @@ function env_or($keys, string $fallback): string
     return $fallback;
 }
 
-define('DB_HOST', env_or(['DB_HOST', 'MYSQLHOST'], '127.0.0.1'));
-define('DB_PORT', env_or(['DB_PORT', 'MYSQLPORT'], '3306'));
-define('DB_USER', env_or(['DB_USER', 'MYSQLUSER'], 'root'));
-define('DB_PASS', env_or(['DB_PASS', 'MYSQLPASSWORD'], ''));  // XAMPP default is empty
+defined('DB_HOST') || define('DB_HOST', env_or(['DB_HOST', 'MYSQLHOST'], '127.0.0.1'));
+defined('DB_PORT') || define('DB_PORT', env_or(['DB_PORT', 'MYSQLPORT'], '3306'));
+defined('DB_USER') || define('DB_USER', env_or(['DB_USER', 'MYSQLUSER'], 'root'));
+defined('DB_PASS') || define('DB_PASS', env_or(['DB_PASS', 'MYSQLPASSWORD'], ''));  // XAMPP default is empty
 
 // Deliberately NOT aliased to Railway's MYSQLDATABASE (which is "railway"):
-// database/schema.sql creates and populates a database called online_exam,
-// so the app must look in that one or it would connect to an empty schema.
-define('DB_NAME', env_or('DB_NAME', 'online_exam'));
+// The installer creates the tables in DB_NAME, and the Railway deploy was
+// installed into online_exam, so that stays the default.
+defined('DB_NAME') || define('DB_NAME', env_or('DB_NAME', 'online_exam'));
 
 // ---------- Application ----------
 define('APP_NAME', 'Online Exam Portal');

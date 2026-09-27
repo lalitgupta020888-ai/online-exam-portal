@@ -16,11 +16,7 @@ function migrate_college(PDO $pdo, string $dbName): array
     $log = [];
 
     /* ---------------- 1. New tables ---------------- */
-    $file = __DIR__ . '/../database/upgrade_college.sql';
-    if (!is_readable($file)) {
-        throw new RuntimeException('Cannot read database/upgrade_college.sql');
-    }
-    foreach (split_sql(file_get_contents($file)) as $sql) {
+    foreach (sql_file_statements(__DIR__ . '/../database/upgrade_college.sql') as $sql) {
         $pdo->exec($sql);
     }
     $log[] = ['ok', 'Tables colleges and branches are present'];

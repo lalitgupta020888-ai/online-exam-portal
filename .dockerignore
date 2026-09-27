@@ -13,3 +13,4 @@ upgrade.php
 uploads/**
 !uploads/**/.gitkeep
 *.log
+config/local.php

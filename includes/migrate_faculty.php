@@ -16,11 +16,7 @@ function migrate_faculty(PDO $pdo, string $dbName): array
     $log = [];
 
     // ---------- 1. New tables ----------
-    $file = __DIR__ . '/../database/upgrade_faculty.sql';
-    if (!is_readable($file)) {
-        throw new RuntimeException('Cannot read database/upgrade_faculty.sql');
-    }
-    foreach (split_sql(file_get_contents($file)) as $sql) {
+    foreach (sql_file_statements(__DIR__ . '/../database/upgrade_faculty.sql') as $sql) {
         $pdo->exec($sql);
     }
     $log[] = ['ok', 'Tables faculty, exam_assignments and question_imports are present'];
