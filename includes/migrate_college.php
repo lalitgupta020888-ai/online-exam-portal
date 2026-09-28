@@ -61,11 +61,8 @@ function migrate_college(PDO $pdo, string $dbName): array
         ['exams', 'target_semester',  'ALTER TABLE `exams` ADD COLUMN `target_semester` TINYINT UNSIGNED
                                         DEFAULT NULL AFTER `target_year`'],
 
-        // Who each account registered under: faculty under an administrator,
-        // students under their subject teacher
+        // The administrator each faculty member registered under
         ['faculty',  'admin_id',   'ALTER TABLE `faculty` ADD COLUMN `admin_id` INT UNSIGNED
-                                     DEFAULT NULL AFTER `college_id`'],
-        ['students', 'faculty_id', 'ALTER TABLE `students` ADD COLUMN `faculty_id` INT UNSIGNED
                                      DEFAULT NULL AFTER `college_id`'],
     ];
 
@@ -118,10 +115,7 @@ function migrate_college(PDO $pdo, string $dbName): array
         ['exams',    'fk_exams_branch',     'ALTER TABLE `exams` ADD CONSTRAINT `fk_exams_branch`
             FOREIGN KEY (`target_branch_id`) REFERENCES `branches` (`id`) ON DELETE SET NULL'],
         ['faculty',  'fk_faculty_admin',    'ALTER TABLE `faculty` ADD CONSTRAINT `fk_faculty_admin`
-            FOREIGN KEY (`admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL'],
-        ['students', 'fk_students_faculty', 'ALTER TABLE `students` ADD CONSTRAINT `fk_students_faculty`
-            FOREIGN KEY (`faculty_id`) REFERENCES `faculty` (`id`) ON DELETE SET NULL'],
-    ];
+            FOREIGN KEY (`admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL'],    ];
     foreach ($fks as [$table, $name, $sql]) {
         if (!index_exists($pdo, $dbName, $table, $name)) {
             try { $pdo->exec($sql); } catch (PDOException $e) { /* already constrained */ }

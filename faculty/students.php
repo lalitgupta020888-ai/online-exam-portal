@@ -8,7 +8,7 @@ $faculty   = require_faculty();
 $collegeId = (int)$faculty['college_id'];
 
 $search = trim($_GET['q'] ?? '');
-$scope  = $_GET['scope'] ?? 'registered';   // registered = signed up under me, mine = on my exams, all = everyone
+$scope  = $_GET['scope'] ?? 'mine';      // mine = my students, all = every student
 
 $sql = 'SELECT s.id, s.name, s.email, s.phone, s.is_active, s.created_at,
                s.branch_id, s.study_year, s.semester, s.enrollment_no,
@@ -31,10 +31,7 @@ $params = ['fac1' => $faculty['id'], 'fac2' => $faculty['id'], 'fac3' => $facult
 $where  = ['s.college_id = :college'];
 $params['college'] = $collegeId;
 
-if ($scope === 'registered') {
-    $where[] = 's.faculty_id = :fac5';
-    $params['fac5'] = $faculty['id'];
-} elseif ($scope === 'mine') {
+if ($scope === 'mine') {
     $where[] = 'EXISTS (SELECT 1 FROM exam_assignments a JOIN exams e ON e.id = a.exam_id
                          WHERE a.student_id = s.id AND e.faculty_id = :fac4)';
     $params['fac4'] = $faculty['id'];
@@ -71,8 +68,6 @@ require_once __DIR__ . '/includes/faculty_header.php';
     <div class="col-md-4">
       <label class="form-label" for="scope">Show</label>
       <select class="form-select" id="scope" name="scope">
-        <option value="registered" <?= $scope === 'registered' ? 'selected' : '' ?>>
-          Students registered under me</option>
         <option value="mine" <?= $scope === 'mine' ? 'selected' : '' ?>>
           Only students assigned to my exams</option>
         <option value="all" <?= $scope === 'all' ? 'selected' : '' ?>>

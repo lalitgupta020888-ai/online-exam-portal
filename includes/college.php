@@ -92,20 +92,6 @@ function get_college_admins(?int $collegeId): array
     return $st->fetchAll();
 }
 
-/** Approved, active teachers of one college - a new student registers under one. */
-function get_college_teachers(?int $collegeId): array
-{
-    if (!$collegeId) {
-        return [];
-    }
-    $st = db()->prepare("SELECT id, name, designation, department, specialization, branch_id
-                           FROM faculty
-                          WHERE college_id = ? AND status = 'approved' AND is_active = 1
-                          ORDER BY name");
-    $st->execute([$collegeId]);
-    return $st->fetchAll();
-}
-
 /** "Dr. Anita Verma (HOD)" style label for an admin or faculty row. */
 function person_label(array $row, string $extra = ''): string
 {

@@ -87,7 +87,7 @@ in `api/`.
 The installer creates no login accounts. Register your college at
 `/admin/register.php` - that creates the first administrator. Faculty then sign
 up at `/faculty/register.php` under that administrator, and students sign up at
-`/register.php` under their subject teacher. Every role has a
+`/register.php` under their college and class. Every role has a
 **Change password** screen:
 
 | Role    | Where |

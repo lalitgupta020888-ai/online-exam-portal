@@ -15,7 +15,7 @@ if (is_student_logged_in()) {
 $pageTitle = 'Student Registration';
 $activeNav = 'login';
 $errors    = [];
-$old       = ['name' => '', 'email' => '', 'phone' => '', 'college_id' => '', 'faculty_id' => '',
+$old       = ['name' => '', 'email' => '', 'phone' => '', 'college_id' => '',
               'branch_id' => '', 'study_year' => '', 'semester' => '',
               'enrollment_no' => '', 'admission_year' => ''];
 
@@ -23,17 +23,11 @@ $colleges = get_colleges();
 
 // Branch lists for every college, so the branch dropdown can follow the
 // college choice without a page reload.
-$branchMap  = [];
-$teacherMap = [];   // every student registers under one subject teacher
+$branchMap = [];
 foreach ($colleges as $col) {
     $branchMap[(int)$col['id']] = array_map(
         static fn($b) => ['id' => (int)$b['id'], 'name' => $b['name'] . ' (' . $b['code'] . ')'],
         get_branches((int)$col['id'])
-    );
-    $teacherMap[(int)$col['id']] = array_map(
-        static fn($t) => ['id' => (int)$t['id'],
-                          'name' => person_label($t, (string)($t['specialization'] ?: $t['department']))],
-        get_college_teachers((int)$col['id'])
     );
 }
 
@@ -57,11 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $collegeId = (int)$old['college_id'];
     if (!$collegeId || !get_college($collegeId)) {
         $errors['college_id'] = 'Choose your college.';
-    }
-
-    $facultyId = (int)$old['faculty_id'];
-    if (!$facultyId || !in_array($facultyId, array_column($teacherMap[$collegeId] ?? [], 'id'), true)) {
-        $errors['faculty_id'] = 'Choose the subject teacher you are registering under.';
     }
 
     $branchId = (int)$old['branch_id'];
@@ -110,11 +99,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$errors) {
         db()->prepare(
-            'INSERT INTO students (college_id, faculty_id, name, email, phone, branch_id, study_year,
+            'INSERT INTO students (college_id, name, email, phone, branch_id, study_year,
                     semester, enrollment_no, admission_year, password_hash, password_changed_at)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
+             VALUES (?,?,?,?,?,?,?,?,?,?,?)'
         )->execute([
-            $collegeId, $facultyId, $old['name'], $old['email'],
+            $collegeId, $old['name'], $old['email'],
             $old['phone'] !== '' ? $old['phone'] : null,
             $branchId, $year, $sem,
             $old['enrollment_no'] !== '' ? $old['enrollment_no'] : null,
@@ -200,21 +189,6 @@ require_once __DIR__ . '/includes/header.php';
                   <option value="">Choose a college first</option>
                 </select>
                 <div class="invalid-feedback"><?= e($errors['branch_id'] ?? 'Choose your branch.') ?></div>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label" for="faculty_id">
-                  Subject Teacher <span class="req">*</span>
-                </label>
-                <select class="form-select <?= isset($errors['faculty_id']) ? 'is-invalid' : '' ?>"
-                        id="faculty_id" name="faculty_id" required
-                        data-college-map="OEP_TEACHERS" data-selected="<?= e($old['faculty_id']) ?>">
-                  <option value="">Choose a college first</option>
-                </select>
-                <div class="invalid-feedback">
-                  <?= e($errors['faculty_id'] ?? 'Choose your subject teacher.') ?>
-                </div>
-                <div class="form-text">You register under this teacher's class.</div>
               </div>
 
               <div class="col-md-4">
@@ -378,7 +352,6 @@ require_once __DIR__ . '/includes/header.php';
 <script>
 /* Branch options per college, used by main.js to refresh the branch list. */
 window.OEP_BRANCHES = <?= json_encode($branchMap) ?>;
-window.OEP_TEACHERS = <?= json_encode($teacherMap) ?>;
 </script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
