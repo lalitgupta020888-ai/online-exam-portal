@@ -86,22 +86,15 @@ Then run the installer once - see below.
 
 `install.php` and `upgrade.php` are listed in `.dockerignore`, so they are
 **not** shipped to the server. Both accept an unauthenticated POST that re-runs
-the schema and resets the administrator password back to `admin123`; on a public
-URL that is an open door to anyone who guesses the filename.
+the schema (the installer wipes every table); on a public URL that is an open
+door to anyone who guesses the filename.
 
 The schema on the live site has already been created. To run one of them again:
 comment its line out of `.dockerignore`, `railway up`, use it, then restore the
 line and `railway up` again.
 
-The installer seeds two accounts:
-
-| Role | Username / email | Password |
-|---|---|---|
-| Administrator | `admin` | `admin123` |
-| Demo student | `student@example.com` | `student123` |
-
-**Change both passwords** - the defaults are published in this file and in the
-repository's history.
+The installer creates no login accounts - register the college at
+`/admin/register.php` to create the first administrator.
 
 ## Uploaded files
 

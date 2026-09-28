@@ -150,25 +150,10 @@ function migrate_faculty(PDO $pdo, string $dbName): array
     }
     $log[] = ['ok', 'Foreign keys linked to the faculty table'];
 
-    // ---------- 5. Demo faculty account ----------
-    if ((int)$pdo->query('SELECT COUNT(*) FROM faculty')->fetchColumn() === 0) {
-        $st = $pdo->prepare(
-            'INSERT INTO faculty (name, employee_code, username, email, phone, department,
-                    designation, qualification, specialization, experience_years,
-                    joining_date, password_hash, status, approved_at)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
-        );
-        $st->execute(['Dr. Anita Verma', 'FAC-001', 'faculty', 'faculty@example.com',
-                      '9876500001', 'Computer Science', 'Associate Professor',
-                      'Ph.D. (Computer Science)', 'Networks, Operating Systems', 12.0,
-                      '2014-07-01', password_hash('faculty123', PASSWORD_DEFAULT),
-                      'approved', date('Y-m-d H:i:s')]);
-        $log[] = ['ok', 'Demo faculty account created (faculty / faculty123)'];
-    } else {
-        // Existing accounts predate the approval workflow - they stay approved.
-        $pdo->exec("UPDATE `faculty` SET `status` = 'approved' WHERE `status` IS NULL");
-        $log[] = ['ok', 'Faculty account(s) already exist - left approved and untouched'];
-    }
+    // ---------- 5. Existing faculty accounts ----------
+    // Accounts that predate the approval workflow stay approved.
+    $pdo->exec("UPDATE `faculty` SET `status` = 'approved' WHERE `status` IS NULL");
+    $log[] = ['ok', 'Existing faculty accounts left approved and untouched'];
 
     // ---------- 6. Backfill ----------
     // Every exam is allotted per student: a paper is visible only to the

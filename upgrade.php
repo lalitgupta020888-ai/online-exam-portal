@@ -88,14 +88,7 @@ if ($run) {
     <?php else: ?>
       <div class="alert alert-success">
         <h5 class="alert-heading"><i class="bi bi-check2-circle me-1"></i>Upgrade complete</h5>
-        <p class="mb-2">Faculty sign in:</p>
-        <table class="table table-sm mb-0 bg-white">
-          <thead><tr><th>Username</th><th>Password</th><th>Login page</th></tr></thead>
-          <tbody>
-            <tr><td><code>faculty</code></td><td><code>faculty123</code></td>
-                <td><a href="<?= BASE_URL ?>/faculty/login.php">Faculty login</a></td></tr>
-          </tbody>
-        </table>
+        <p class="mb-0">Your existing accounts and data were kept.</p>
       </div>
       <div class="alert alert-warning small">
         <i class="bi bi-shield-exclamation me-1"></i>Delete <code>upgrade.php</code> now.

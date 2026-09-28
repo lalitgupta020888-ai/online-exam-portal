@@ -3,9 +3,9 @@
  * One click installer.
  *
  * Run this once from the browser (http://localhost/online-exam/install.php).
- * It executes database/schema.sql and then creates the administrator and a
- * demo student account - those two are made here rather than in the SQL file
- * because their passwords must be hashed with PHP's password_hash().
+ * It executes database/schema.sql and the migrations. It creates no login
+ * accounts - the first administrator registers the college from
+ * admin/register.php.
  *
  * Delete this file once the project is installed.
  */
@@ -51,38 +51,8 @@ if ($run) {
         $log = array_merge($log, migrate_faculty($pdo, DB_NAME));
         $log = array_merge($log, migrate_college($pdo, DB_NAME));
 
-        // ---------------- Administrator ----------------
-        $adminUser = 'admin';
-        $adminPass = 'admin123';
-        $st = $pdo->prepare('INSERT INTO admins (username, name, password_hash) VALUES (?,?,?)
-                             ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash)');
-        $st->execute([$adminUser, 'System Administrator',
-                      password_hash($adminPass, PASSWORD_DEFAULT)]);
-        $log[] = ['ok', 'Administrator account created'];
-
-        // ---------------- Demo student ----------------
-        $demoEmail = 'student@example.com';
-        $demoPass  = 'student123';
-        $st = $pdo->prepare('INSERT INTO students (name, email, phone, password_hash) VALUES (?,?,?,?)
-                             ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash)');
-        $st->execute(['Demo Student', $demoEmail, '9876543210',
-                      password_hash($demoPass, PASSWORD_DEFAULT)]);
-        $log[] = ['ok', 'Demo student account created'];
-
-        // ---------------- Attach the demo accounts to the college ----------------
-        $collegeId = (int)$pdo->query('SELECT id FROM colleges ORDER BY id LIMIT 1')->fetchColumn();
-        foreach (['admins', 'faculty', 'students', 'exams'] as $t) {
-            $pdo->prepare("UPDATE `$t` SET college_id = ? WHERE college_id IS NULL")
-                ->execute([$collegeId]);
-        }
-        // Give the demo student a class so the branch / semester filters have data.
-        $branchId = (int)$pdo->query("SELECT id FROM branches
-                                       WHERE college_id = $collegeId AND code = 'CSE'")->fetchColumn();
-        $pdo->prepare('UPDATE students SET branch_id = ?, study_year = 3, semester = 5,
-                              enrollment_no = ?, admission_year = ?
-                        WHERE email = ? AND branch_id IS NULL')
-            ->execute([$branchId ?: null, 'DEMO-001', (int)date('Y') - 2, $demoEmail]);
-        $log[] = ['ok', 'Demo accounts linked to the college and given a class'];
+        // No accounts are created here: the first administrator registers the
+        // college from admin/register.php, and faculty / students sign up under it.
 
     } catch (Throwable $ex) {
         $failed = true;
@@ -149,25 +119,16 @@ if ($run) {
     <?php else: ?>
       <div class="alert alert-success">
         <h5 class="alert-heading"><i class="bi bi-check2-circle me-1"></i>Installation complete</h5>
-        <p class="mb-2">Use these accounts to sign in:</p>
-        <table class="table table-sm mb-0 bg-white">
-          <thead><tr><th>Role</th><th>Username / Email</th><th>Password</th><th>Login page</th></tr></thead>
-          <tbody>
-            <tr><td>Administrator</td><td><code>admin</code></td><td><code>admin123</code></td>
-                <td><a href="<?= BASE_URL ?>/admin/login.php">Admin login</a></td></tr>
-            <tr><td>Demo student</td><td><code>student@example.com</code></td>
-                <td><code>student123</code></td>
-                <td><a href="<?= BASE_URL ?>/login.php">Student login</a></td></tr>
-          </tbody>
-        </table>
+        <p class="mb-0">No login accounts exist yet. Register your college to create the
+          first administrator account - faculty and students then sign up under it.</p>
       </div>
       <div class="alert alert-warning small">
         <i class="bi bi-shield-exclamation me-1"></i>
-        Delete <code>install.php</code> now, and change the administrator password.
+        Delete <code>install.php</code> now.
       </div>
       <div class="d-flex gap-2">
-        <a href="<?= BASE_URL ?>/index.php" class="btn btn-primary">Open the website</a>
-        <a href="<?= BASE_URL ?>/admin/login.php" class="btn btn-outline-primary">Open the admin panel</a>
+        <a href="<?= BASE_URL ?>/admin/register.php" class="btn btn-primary">Register your college</a>
+        <a href="<?= BASE_URL ?>/index.php" class="btn btn-outline-primary">Open the website</a>
       </div>
     <?php endif; ?>
   <?php endif; ?>

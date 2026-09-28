@@ -82,17 +82,13 @@ in `api/`.
 
 6. **Open the site:** <http://localhost/online-exam/>
 
-### Default accounts
+### Accounts
 
-| Role          | Username / Email        | Password     | Login page           |
-|---------------|-------------------------|--------------|----------------------|
-| Administrator | `admin`                 | `admin123`   | `/admin/login.php`   |
-| Faculty       | `faculty`               | `faculty123` | `/faculty/login.php` |
-| Demo student  | `student@example.com`   | `student123` | `/login.php`         |
-
-Faculty can sign in with either the username or the email
-(`faculty@example.com`). Change these passwords after the first login - every
-role now has a **Change password** screen:
+The installer creates no login accounts. Register your college at
+`/admin/register.php` - that creates the first administrator. Faculty then sign
+up at `/faculty/register.php` under that administrator, and students sign up at
+`/register.php` under their subject teacher. Every role has a
+**Change password** screen:
 
 | Role    | Where |
 |---------|-------|
