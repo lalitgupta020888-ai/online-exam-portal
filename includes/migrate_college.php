@@ -80,41 +80,20 @@ function migrate_college(PDO $pdo, string $dbName): array
         ? "Added $added college / branch column(s) to admins, faculty, students and exams"
         : 'All college columns already present'];
 
-    /* ---------------- 3. A college for the data that already exists ---------------- */
+    /* ---------------- 3. Link older data to the first college ---------------- */
+    // No college is created here - colleges register themselves from
+    // admin/register.php. Rows from before colleges existed join the first one.
     $collegeId = (int)$pdo->query('SELECT id FROM colleges ORDER BY id LIMIT 1')->fetchColumn();
 
-    if (!$collegeId) {
-        $st = $pdo->prepare(
-            'INSERT INTO colleges (name, code, email, city, state)
-             VALUES (?,?,?,?,?)'
-        );
-        $st->execute(['Demo Institute of Technology', 'DEMO',
-                      'office@demo-institute.edu', 'Noida', 'Uttar Pradesh']);
-        $collegeId = (int)$pdo->lastInsertId();
-        $log[] = ['ok', 'Created the default college for the existing data'];
-    } else {
-        $log[] = ['ok', 'College record already present'];
-    }
-
-    /* ---------------- 4. Default branches ---------------- */
-    $st = $pdo->prepare('SELECT COUNT(*) FROM branches WHERE college_id = ?');
-    $st->execute([$collegeId]);
-    if ((int)$st->fetchColumn() === 0) {
-        $ins = $pdo->prepare('INSERT INTO branches (college_id, name, code) VALUES (?,?,?)');
-        foreach (default_branches() as [$name, $code]) {
-            $ins->execute([$collegeId, $name, $code]);
+    if ($collegeId) {
+        foreach (['admins', 'faculty', 'students', 'exams'] as $table) {
+            $pdo->prepare("UPDATE `$table` SET college_id = ? WHERE college_id IS NULL")
+                ->execute([$collegeId]);
         }
-        $log[] = ['ok', count(default_branches()) . ' default branches created'];
+        $log[] = ['ok', 'Existing admins, faculty, students and papers linked to the first college'];
     } else {
-        $log[] = ['ok', 'Branches already defined for this college'];
+        $log[] = ['ok', 'No college registered yet - register one from admin/register.php'];
     }
-
-    /* ---------------- 5. Backfill ---------------- */
-    foreach (['admins', 'faculty', 'students', 'exams'] as $table) {
-        $pdo->prepare("UPDATE `$table` SET college_id = ? WHERE college_id IS NULL")
-            ->execute([$collegeId]);
-    }
-    $log[] = ['ok', 'Existing admins, faculty, students and papers linked to that college'];
 
     // Faculty who registered before admin_id existed go under their college's first admin.
     $pdo->exec('UPDATE `faculty` f
