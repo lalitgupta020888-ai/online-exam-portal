@@ -19,8 +19,7 @@ $c = ['name' => '', 'code' => '', 'email' => '', 'phone' => '', 'website' => '',
 $a = ['admin_name' => '', 'admin_email' => '', 'admin_phone' => '',
       'designation' => '', 'username' => ''];
 
-$designations = ['Principal', 'Director', 'Dean', 'Head of Department',
-                 'Examination Controller', 'Registrar', 'System Administrator'];
+$designations = designations();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();

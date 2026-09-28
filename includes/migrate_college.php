@@ -60,6 +60,13 @@ function migrate_college(PDO $pdo, string $dbName): array
                                         DEFAULT NULL AFTER `target_branch_id`'],
         ['exams', 'target_semester',  'ALTER TABLE `exams` ADD COLUMN `target_semester` TINYINT UNSIGNED
                                         DEFAULT NULL AFTER `target_year`'],
+
+        // Who each account registered under: faculty under an administrator,
+        // students under their subject teacher
+        ['faculty',  'admin_id',   'ALTER TABLE `faculty` ADD COLUMN `admin_id` INT UNSIGNED
+                                     DEFAULT NULL AFTER `college_id`'],
+        ['students', 'faculty_id', 'ALTER TABLE `students` ADD COLUMN `faculty_id` INT UNSIGNED
+                                     DEFAULT NULL AFTER `college_id`'],
     ];
 
     $added = 0;
@@ -109,6 +116,12 @@ function migrate_college(PDO $pdo, string $dbName): array
     }
     $log[] = ['ok', 'Existing admins, faculty, students and papers linked to that college'];
 
+    // Faculty who registered before admin_id existed go under their college's first admin.
+    $pdo->exec('UPDATE `faculty` f
+                   SET f.admin_id = (SELECT MIN(a.id) FROM admins a WHERE a.college_id = f.college_id)
+                 WHERE f.admin_id IS NULL');
+    $log[] = ['ok', 'Existing faculty linked to their college administrator'];
+
     /* ---------------- 6. Foreign keys ---------------- */
     $fks = [
         ['admins',   'fk_admins_college',   'ALTER TABLE `admins` ADD CONSTRAINT `fk_admins_college`
@@ -125,6 +138,10 @@ function migrate_college(PDO $pdo, string $dbName): array
             FOREIGN KEY (`college_id`) REFERENCES `colleges` (`id`) ON DELETE CASCADE'],
         ['exams',    'fk_exams_branch',     'ALTER TABLE `exams` ADD CONSTRAINT `fk_exams_branch`
             FOREIGN KEY (`target_branch_id`) REFERENCES `branches` (`id`) ON DELETE SET NULL'],
+        ['faculty',  'fk_faculty_admin',    'ALTER TABLE `faculty` ADD CONSTRAINT `fk_faculty_admin`
+            FOREIGN KEY (`admin_id`) REFERENCES `admins` (`id`) ON DELETE SET NULL'],
+        ['students', 'fk_students_faculty', 'ALTER TABLE `students` ADD CONSTRAINT `fk_students_faculty`
+            FOREIGN KEY (`faculty_id`) REFERENCES `faculty` (`id`) ON DELETE SET NULL'],
     ];
     foreach ($fks as [$table, $name, $sql]) {
         if (!index_exists($pdo, $dbName, $table, $name)) {

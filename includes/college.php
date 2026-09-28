@@ -77,6 +77,60 @@ function branch_name(?int $branchId): string
 }
 
 /* ------------------------------------------------------------------ */
+/*  Who an account registers under                                     */
+/* ------------------------------------------------------------------ */
+
+/** Administrators of one college - a new faculty member registers under one. */
+function get_college_admins(?int $collegeId): array
+{
+    if (!$collegeId) {
+        return [];
+    }
+    $st = db()->prepare('SELECT id, name, designation FROM admins
+                          WHERE college_id = ? ORDER BY name');
+    $st->execute([$collegeId]);
+    return $st->fetchAll();
+}
+
+/** Approved, active teachers of one college - a new student registers under one. */
+function get_college_teachers(?int $collegeId): array
+{
+    if (!$collegeId) {
+        return [];
+    }
+    $st = db()->prepare("SELECT id, name, designation, department, specialization, branch_id
+                           FROM faculty
+                          WHERE college_id = ? AND status = 'approved' AND is_active = 1
+                          ORDER BY name");
+    $st->execute([$collegeId]);
+    return $st->fetchAll();
+}
+
+/** "Dr. Anita Verma (HOD)" style label for an admin or faculty row. */
+function person_label(array $row, string $extra = ''): string
+{
+    $label = $row['name'];
+    if (!empty($row['designation'])) {
+        $label .= ' (' . $row['designation'] . ')';
+    }
+    return $extra !== '' ? $label . ' - ' . $extra : $label;
+}
+
+/**
+ * Designations used across the portal. Pass the value already saved on an
+ * account so an older designation outside this list still shows as selected.
+ */
+function designations(?string $current = null): array
+{
+    $list = ['Principal/Director', 'HOD', 'Lecturer', 'Workshop Superintendent',
+             'Workshop Instructor', 'Computer Operator'];
+    if ($current !== null && $current !== '' && !in_array($current, $list, true)) {
+        $list[] = $current;
+    }
+    return $list;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Year and semester                                                  */
 /* ------------------------------------------------------------------ */
 

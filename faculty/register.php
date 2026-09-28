@@ -18,7 +18,7 @@ $errors = [];
 $done   = false;
 
 $f = [
-    'college_id' => '', 'branch_id' => '',
+    'college_id' => '', 'admin_id' => '', 'branch_id' => '',
     'name' => '', 'employee_code' => '', 'email' => '', 'phone' => '',
     'department' => '', 'designation' => '', 'qualification' => '',
     'specialization' => '', 'experience_years' => '', 'joining_date' => '',
@@ -27,15 +27,19 @@ $f = [
 
 $colleges  = get_colleges();
 $branchMap = [];
+$adminMap  = [];   // every faculty member registers under one administrator
 foreach ($colleges as $col) {
     $branchMap[(int)$col['id']] = array_map(
         static fn($b) => ['id' => (int)$b['id'], 'name' => $b['name'] . ' (' . $b['code'] . ')'],
         get_branches((int)$col['id'])
     );
+    $adminMap[(int)$col['id']] = array_map(
+        static fn($a) => ['id' => (int)$a['id'], 'name' => person_label($a)],
+        get_college_admins((int)$col['id'])
+    );
 }
 
-$designations = ['Professor', 'Associate Professor', 'Assistant Professor',
-                 'Senior Lecturer', 'Lecturer', 'Visiting Faculty', 'Lab Instructor'];
+$designations = designations();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -61,6 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $collegeId = (int)$f['college_id'];
     if (!$collegeId || !get_college($collegeId)) {
         $errors['college_id'] = 'Choose the college you teach at.';
+    }
+    $adminId = (int)$f['admin_id'];
+    if (!$adminId || !in_array($adminId, array_column($adminMap[$collegeId] ?? [], 'id'), true)) {
+        $errors['admin_id'] = 'Choose the administrator you are registering under.';
     }
     $branchId = (int)$f['branch_id'];
     if ($branchId && !branch_belongs_to($branchId, $collegeId)) {
@@ -124,13 +132,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = FACULTY_SELF_APPROVE ? 'approved' : 'pending';
         $st = db()->prepare(
             'INSERT INTO faculty
-               (college_id, branch_id, name, employee_code, username, email, phone,
+               (college_id, admin_id, branch_id, name, employee_code, username, email, phone,
                 department, designation, qualification, specialization, experience_years,
                 joining_date, about, password_hash, password_changed_at, status, approved_at)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
         );
         $st->execute([
             $collegeId,
+            $adminId,
             $branchId ?: null,
             $f['name'],
             $f['employee_code'] !== '' ? $f['employee_code'] : null,
@@ -299,6 +308,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endforeach; ?>
               </select>
               <div class="invalid-feedback"><?= e($errors['college_id'] ?? 'Choose your college.') ?></div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label" for="admin_id">
+                Register under (Administrator) <span class="req">*</span>
+              </label>
+              <select class="form-select <?= isset($errors['admin_id']) ? 'is-invalid' : '' ?>"
+                      id="admin_id" name="admin_id" required
+                      data-college-map="OEP_ADMINS" data-selected="<?= e($f['admin_id']) ?>">
+                <option value="">Choose a college first</option>
+              </select>
+              <div class="invalid-feedback"><?= e($errors['admin_id'] ?? 'Choose an administrator.') ?></div>
+              <div class="form-text">This administrator approves and manages your account.</div>
             </div>
 
             <div class="col-md-6">
@@ -499,6 +521,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
 /* Branch options per college, used by main.js to refresh the branch list. */
 window.OEP_BRANCHES = <?= json_encode($branchMap) ?>;
+window.OEP_ADMINS   = <?= json_encode($adminMap) ?>;
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= url('assets/js/main.js') ?>"></script>

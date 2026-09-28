@@ -10,8 +10,7 @@ $profileErrors = [];
 $passwordErrors = [];
 $openTab = $_GET['tab'] ?? 'profile';
 
-$designations = ['Professor', 'Associate Professor', 'Assistant Professor',
-                 'Senior Lecturer', 'Lecturer', 'Visiting Faculty', 'Lab Instructor'];
+$designations = designations($faculty['designation'] ?? null);
 
 $f = $faculty;
 

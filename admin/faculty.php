@@ -66,6 +66,8 @@ $filter = $_GET['status'] ?? '';
 $search = trim($_GET['q'] ?? '');
 
 $sql = 'SELECT f.*,
+               (SELECT ad.name FROM admins ad WHERE ad.id = f.admin_id) AS admin_name,
+               (SELECT COUNT(*) FROM students s WHERE s.faculty_id = f.id) AS registered_students,
                (SELECT COUNT(*) FROM exams e WHERE e.faculty_id = f.id) AS exam_count,
                (SELECT COUNT(DISTINCT a.student_id) FROM exam_assignments a
                   JOIN exams e ON e.id = a.exam_id WHERE e.faculty_id = f.id) AS student_count
@@ -182,6 +184,10 @@ require_once __DIR__ . '/includes/admin_header.php';
           </div>
 
           <ul class="info-list small mb-3">
+            <li><span>Registered under</span>
+              <strong><?= e($r['admin_name'] ?: '-') ?></strong></li>
+            <li><span>Students under them</span>
+              <strong><?= (int)$r['registered_students'] ?></strong></li>
             <li><span>Username</span><strong><?= e($r['username']) ?></strong></li>
             <li><span>Email</span><strong><?= e($r['email']) ?></strong></li>
             <?php if ($r['phone']): ?>

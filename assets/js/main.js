@@ -103,6 +103,33 @@
     applyBranches(branchSelect.dataset.selected || null);
   }
 
+  /* ------- Admin / teacher lists that follow the college choice ------ */
+  // <select data-college-map="OEP_ADMINS"> is filled from window.OEP_ADMINS[collegeId].
+  if (collegeSelect) {
+    document.querySelectorAll('select[data-college-map]').forEach(function (sel) {
+      var map = window[sel.dataset.collegeMap] || {};
+      var apply = function (keep) {
+        var list = map[collegeSelect.value] || [];
+        sel.innerHTML = '';
+        var blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = !collegeSelect.value ? 'Choose a college first'
+          : (list.length ? '-- select --' : 'None registered in this college yet');
+        sel.appendChild(blank);
+        list.forEach(function (p) {
+          var o = document.createElement('option');
+          o.value = p.id;
+          o.textContent = p.name;
+          if (String(p.id) === String(keep)) { o.selected = true; }
+          sel.appendChild(o);
+        });
+        sel.disabled = list.length === 0;
+      };
+      collegeSelect.addEventListener('change', function () { apply(null); });
+      apply(sel.dataset.selected || null);
+    });
+  }
+
   /* ------------- Instructions page: enable Start after accept ------- */
   var accept = document.getElementById('acceptTerms');
   var startBtn = document.getElementById('startExamBtn');

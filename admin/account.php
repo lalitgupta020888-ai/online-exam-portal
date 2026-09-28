@@ -16,8 +16,7 @@ $college = get_college((int)$admin['college_id']);
 $c = $college ?? ['name' => '', 'code' => '', 'logo' => null, 'email' => '', 'phone' => '',
                   'website' => '', 'address' => '', 'city' => '', 'state' => ''];
 
-$designations = ['Principal', 'Director', 'Dean', 'Head of Department',
-                 'Examination Controller', 'Registrar', 'System Administrator'];
+$designations = designations($admin['designation'] ?? null);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
