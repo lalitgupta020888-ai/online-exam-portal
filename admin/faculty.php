@@ -9,6 +9,12 @@
 require_once __DIR__ . '/../includes/auth.php';
 $admin = require_admin();
 $collegeId = (int)$admin['college_id'];
+$adminId   = (int)$admin['id'];
+
+// A pending registration is approved only by the administrator the teacher chose
+// at sign-up (older rows with no admin can be approved by any admin of the college).
+$canApprove = static fn(array $f): bool =>
+    empty($f['admin_id']) || (int)$f['admin_id'] === $adminId;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
@@ -24,6 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         switch ($action) {
             case 'approve':
+                if (!$canApprove($target)) {
+                    set_flash('danger', $target['name'] . ' registered under another administrator, '
+                                       . 'so only that administrator can approve them.');
+                    break;
+                }
                 db()->prepare("UPDATE faculty SET status = 'approved', approved_at = ?, is_active = 1
                                 WHERE id = ?")
                     ->execute([date('Y-m-d H:i:s'), $id]);
@@ -92,12 +103,12 @@ $rows = $st->fetchAll();
 
 $cst = db()->prepare(
     "SELECT
-        SUM(status = 'pending')   AS pending,
+        SUM(status = 'pending' AND (admin_id IS NULL OR admin_id = ?)) AS pending,
         SUM(status = 'approved')  AS approved,
         SUM(status = 'suspended') AS suspended,
         COUNT(*) AS total
      FROM faculty WHERE college_id = ?");
-$cst->execute([$collegeId]);
+$cst->execute([$adminId, $collegeId]);
 $counts = $cst->fetch();
 
 $pageTitle = 'Faculty Accounts';
@@ -217,7 +228,11 @@ require_once __DIR__ . '/includes/admin_header.php';
           <?php endif; ?>
 
           <div class="d-flex flex-wrap gap-1">
-            <?php if ($r['status'] === 'pending'): ?>
+            <?php if ($r['status'] === 'pending' && !$canApprove($r)): ?>
+              <span class="small text-muted-2 me-2">
+                <i class="bi bi-hourglass-split me-1"></i>Awaiting approval from <?= e($r['admin_name'] ?: 'another administrator') ?>
+              </span>
+            <?php elseif ($r['status'] === 'pending'): ?>
               <form method="post" class="d-inline">
                 <?= csrf_field() ?>
                 <input type="hidden" name="faculty_id" value="<?= $id ?>">

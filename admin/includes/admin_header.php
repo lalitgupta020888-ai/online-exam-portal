@@ -27,9 +27,10 @@ $navItems = [
 $navItems['branches'] = ['branches.php', 'diagram-3', 'Branches'];
 
 // Badge on the Faculty item for registrations waiting to be approved - only
-// registrations for this administrator's own college.
-$pf = db()->prepare("SELECT COUNT(*) FROM faculty WHERE status = 'pending' AND college_id = ?");
-$pf->execute([(int)$admin['college_id']]);
+// registrations made under this administrator (or older ones with no admin set).
+$pf = db()->prepare("SELECT COUNT(*) FROM faculty WHERE status = 'pending' AND college_id = ?
+                       AND (admin_id IS NULL OR admin_id = ?)");
+$pf->execute([(int)$admin['college_id'], (int)$admin['id']]);
 $pendingFaculty = (int)$pf->fetchColumn();
 ?>
 <!DOCTYPE html>
