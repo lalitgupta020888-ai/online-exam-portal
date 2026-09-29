@@ -22,6 +22,16 @@ function url(string $path = ''): string
 }
 
 /**
+ * URL of a static file with its modification time appended, so browsers and
+ * the host's cache fetch the new copy as soon as the file is re-uploaded.
+ */
+function asset_url(string $path): string
+{
+    $mtime = @filemtime(dirname(__DIR__) . '/' . ltrim($path, '/'));
+    return url($path) . ($mtime ? '?v=' . $mtime : '');
+}
+
+/**
  * Redirect and stop execution.
  *
  * A path starting with "/" is already absolute (for example a stored
