@@ -6,6 +6,9 @@
  *   $otpRole = ['key' => 'admin', 'table' => 'admins', 'title' => 'Administrator',
  *               'login' => 'admin/login.php', 'body' => 'auth-body-admin'];
  *
+ * Optional: 'match' (columns the typed identifier is compared with, default
+ * username + email; phone is always tried) and 'ident_label' (field label).
+ *
  * Steps (kept in the session): 1 find the account and send a code,
  * 2 enter the code, 3 choose a new password.
  */
@@ -17,6 +20,7 @@ $table = $otpRole['table'];   // fixed by the calling page, never user input
 $state = $_SESSION['pw_otp'][$key] ?? ['step' => 1];
 $error = '';
 $info  = '';
+$identLabel = $otpRole['ident_label'] ?? 'Username, Email or Phone';
 
 $saveState = static function (array $s) use ($key): void {
     $_SESSION['pw_otp'][$key] = $s;
@@ -57,16 +61,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $channel = post('channel') === 'phone' ? 'phone' : 'email';
 
         if ($ident === '') {
-            $error = 'Enter your username, email or phone number.';
+            $error = 'Enter your ' . strtolower($identLabel) . '.';
         } elseif ($channel === 'email' && !email_otp_enabled()) {
             $error = 'Email OTP is not available right now. Please contact the administrator.';
         } elseif ($channel === 'phone' && !sms_otp_enabled()) {
             $error = 'Phone OTP is not available yet. Please use email OTP.';
         } else {
             $phone = normalize_phone($ident);
-            $st = db()->prepare("SELECT id, name, email, phone FROM `$table`
-                                  WHERE username = ? OR email = ?");
-            $st->execute([$ident, $ident]);
+            $cols = $otpRole['match'] ?? ['username', 'email'];
+            $st = db()->prepare("SELECT id, name, email, phone FROM `$table` WHERE "
+                              . implode(' OR ', array_map(static fn($c) => "`$c` = ?", $cols)));
+            $st->execute(array_fill(0, count($cols), $ident));
             $acc = $st->fetch();
             if (!$acc && strlen($phone) === 10) {
                 // Phone numbers are stored in whatever format was typed, so
@@ -82,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!$acc) {
                 $error = 'No ' . strtolower($otpRole['title']) . ' account matches that '
-                       . 'username, email or phone number.';
+                       . strtolower($identLabel) . '.';
             } elseif ($channel === 'email' && !filter_var($acc['email'], FILTER_VALIDATE_EMAIL)) {
                 $error = 'This account has no email address on record. Try phone OTP.';
             } elseif ($channel === 'phone' && strlen(normalize_phone($acc['phone'])) !== 10) {
@@ -179,12 +184,12 @@ $smsOn   = sms_otp_enabled();
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="send">
         <div class="mb-3">
-          <label class="form-label" for="identifier">Username, Email or Phone</label>
+          <label class="form-label" for="identifier"><?= e($identLabel) ?></label>
           <div class="input-group">
             <span class="input-group-text bg-white"><i class="bi bi-person-badge"></i></span>
             <input type="text" class="form-control" id="identifier" name="identifier"
                    value="<?= e(post('identifier')) ?>" required autofocus>
-            <div class="invalid-feedback">Enter your username, email or phone number.</div>
+            <div class="invalid-feedback">Enter your <?= e(strtolower($identLabel)) ?>.</div>
           </div>
         </div>
         <label class="form-label">Send the code by</label>
