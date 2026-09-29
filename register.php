@@ -68,6 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($sem < 1 || $sem > 10) {
         $errors['semester'] = 'Choose your current semester.';
     }
+    if ($old['enrollment_no'] === '') {
+        $errors['enrollment_no'] = 'Enter your enrolment number.';
+    }
     if ($old['admission_year'] !== ''
         && ((int)$old['admission_year'] < 1990 || (int)$old['admission_year'] > (int)date('Y') + 1)) {
         $errors['admission_year'] = 'Enter a valid admission year.';
@@ -229,13 +232,13 @@ require_once __DIR__ . '/includes/header.php';
               </div>
 
               <div class="col-md-6">
-                <label class="form-label" for="enrollment_no">Enrolment / Roll Number</label>
+                <label class="form-label" for="enrollment_no">Enrolment Number <span class="req">*</span></label>
                 <div class="input-group">
                   <span class="input-group-text bg-white"><i class="bi bi-card-list"></i></span>
-                  <input type="text" id="enrollment_no" name="enrollment_no"
+                  <input type="text" id="enrollment_no" name="enrollment_no" required
                          class="form-control <?= isset($errors['enrollment_no']) ? 'is-invalid' : '' ?>"
                          value="<?= e($old['enrollment_no']) ?>" placeholder="e.g. 21CSE045">
-                  <div class="invalid-feedback"><?= e($errors['enrollment_no'] ?? '') ?></div>
+                  <div class="invalid-feedback"><?= e($errors['enrollment_no'] ?? 'Enter your enrolment number.') ?></div>
                 </div>
               </div>
             </div>

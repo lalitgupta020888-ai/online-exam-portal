@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $st = db()->prepare('SELECT id FROM faculty WHERE employee_code = ? AND id <> ?');
                 $st->execute([$f['employee_code'], $faculty['id']]);
                 if ($st->fetch()) {
-                    $profileErrors['employee_code'] = 'That employee ID is already in use.';
+                    $profileErrors['employee_code'] = 'That EHRMS ID is already in use.';
                 }
             }
         }
@@ -209,7 +209,7 @@ require_once __DIR__ . '/includes/faculty_header.php';
               <div class="invalid-feedback"><?= e($profileErrors['name'] ?? 'Enter your name.') ?></div>
             </div>
             <div class="col-md-6">
-              <label class="form-label" for="employee_code">Employee ID</label>
+              <label class="form-label" for="employee_code">EHRMS ID</label>
               <input type="text" id="employee_code" name="employee_code"
                      class="form-control <?= isset($profileErrors['employee_code']) ? 'is-invalid' : '' ?>"
                      value="<?= e($f['employee_code'] ?? '') ?>">

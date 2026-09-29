@@ -191,7 +191,7 @@ require_once __DIR__ . '/includes/admin_header.php';
               <li><span>Phone</span><strong><?= e($r['phone']) ?></strong></li>
             <?php endif; ?>
             <?php if ($r['employee_code']): ?>
-              <li><span>Employee ID</span><strong><?= e($r['employee_code']) ?></strong></li>
+              <li><span>EHRMS ID</span><strong><?= e($r['employee_code']) ?></strong></li>
             <?php endif; ?>
             <?php if ($r['qualification']): ?>
               <li><span>Qualification</span><strong><?= e($r['qualification']) ?></strong></li>

@@ -18,7 +18,7 @@ $errors = [];
 $done   = false;
 
 $f = [
-    'college_id' => '', 'admin_id' => '', 'branch_id' => '',
+    'college_id' => '', 'admin_id' => '',
     'name' => '', 'employee_code' => '', 'email' => '', 'phone' => '',
     'department' => '', 'designation' => '', 'qualification' => '',
     'specialization' => '', 'experience_years' => '', 'joining_date' => '',
@@ -26,13 +26,8 @@ $f = [
 ];
 
 $colleges  = get_colleges();
-$branchMap = [];
 $adminMap  = [];   // every faculty member registers under one administrator
 foreach ($colleges as $col) {
-    $branchMap[(int)$col['id']] = array_map(
-        static fn($b) => ['id' => (int)$b['id'], 'name' => $b['name'] . ' (' . $b['code'] . ')'],
-        get_branches((int)$col['id'])
-    );
     $adminMap[(int)$col['id']] = array_map(
         static fn($a) => ['id' => (int)$a['id'], 'name' => person_label($a)],
         get_college_admins((int)$col['id'])
@@ -61,6 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['phone'] = 'Please enter a valid phone number.';
     }
 
+    if ($f['employee_code'] === '') {
+        $errors['employee_code'] = 'Enter your EHRMS ID.';
+    }
+
     /* ---------------- College ---------------- */
     $collegeId = (int)$f['college_id'];
     if (!$collegeId || !get_college($collegeId)) {
@@ -69,10 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $adminId = (int)$f['admin_id'];
     if (!$adminId || !in_array($adminId, array_column($adminMap[$collegeId] ?? [], 'id'), true)) {
         $errors['admin_id'] = 'Choose the administrator you are registering under.';
-    }
-    $branchId = (int)$f['branch_id'];
-    if ($branchId && !branch_belongs_to($branchId, $collegeId)) {
-        $errors['branch_id'] = 'That branch does not belong to the chosen college.';
     }
 
     /* ---------------- Professional ---------------- */
@@ -123,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $st = db()->prepare('SELECT id FROM faculty WHERE employee_code = ?');
             $st->execute([$f['employee_code']]);
             if ($st->fetch()) {
-                $errors['employee_code'] = 'That employee ID is already registered.';
+                $errors['employee_code'] = 'That EHRMS ID is already registered.';
             }
         }
     }
@@ -140,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $st->execute([
             $collegeId,
             $adminId,
-            $branchId ?: null,
+            null,
             $f['name'],
             $f['employee_code'] !== '' ? $f['employee_code'] : null,
             $f['username'], $f['email'],
@@ -248,13 +243,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="col-md-6">
-              <label class="form-label" for="employee_code">Employee ID</label>
+              <label class="form-label" for="employee_code">EHRMS ID <span class="req">*</span></label>
               <div class="input-group">
                 <span class="input-group-text bg-white"><i class="bi bi-person-vcard"></i></span>
-                <input type="text" id="employee_code" name="employee_code"
+                <input type="text" id="employee_code" name="employee_code" required
                        class="form-control <?= isset($errors['employee_code']) ? 'is-invalid' : '' ?>"
-                       value="<?= e($f['employee_code']) ?>" placeholder="e.g. FAC-2201">
-                <div class="invalid-feedback"><?= e($errors['employee_code'] ?? '') ?></div>
+                       value="<?= e($f['employee_code']) ?>" placeholder="Enter your EHRMS ID">
+                <div class="invalid-feedback"><?= e($errors['employee_code'] ?? 'Enter your EHRMS ID.') ?></div>
               </div>
             </div>
 
@@ -323,17 +318,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <div class="form-text">This administrator approves and manages your account.</div>
             </div>
 
-            <div class="col-md-6">
-              <label class="form-label" for="branch_id">
-                Primary Branch <span class="text-muted-2 fw-normal small">(optional)</span>
-              </label>
-              <select class="form-select <?= isset($errors['branch_id']) ? 'is-invalid' : '' ?>"
-                      id="branch_id" name="branch_id" data-selected="<?= e($f['branch_id']) ?>">
-                <option value="">Choose a college first</option>
-              </select>
-              <div class="invalid-feedback"><?= e($errors['branch_id'] ?? '') ?></div>
-              <div class="form-text">The branch you mainly teach - helps filter your students.</div>
-            </div>
 
             <div class="col-md-6">
               <label class="form-label" for="department">Department <span class="req">*</span></label>
@@ -519,8 +503,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script>
-/* Branch options per college, used by main.js to refresh the branch list. */
-window.OEP_BRANCHES = <?= json_encode($branchMap) ?>;
 window.OEP_ADMINS   = <?= json_encode($adminMap) ?>;
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
