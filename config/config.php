@@ -77,6 +77,23 @@ define('FACULTY_SELF_APPROVE', false);
 // Minimum password length used by every registration / change password form.
 define('MIN_PASSWORD_LENGTH', 6);
 
+/**
+ * Outgoing email for password reset OTPs (Gmail SMTP by default).
+ * Put SMTP_USER and SMTP_PASS (a Gmail App Password, not the normal
+ * password) in config/local.php. Without them email OTP is switched off.
+ */
+defined('SMTP_HOST')      || define('SMTP_HOST', env_or('SMTP_HOST', 'smtp.gmail.com'));
+defined('SMTP_PORT')      || define('SMTP_PORT', (int)env_or('SMTP_PORT', '465'));
+defined('SMTP_USER')      || define('SMTP_USER', env_or('SMTP_USER', ''));
+defined('SMTP_PASS')      || define('SMTP_PASS', env_or('SMTP_PASS', ''));
+defined('SMTP_FROM_NAME') || define('SMTP_FROM_NAME', env_or('SMTP_FROM_NAME', 'Online Exam Portal'));
+
+/**
+ * SMS for phone OTPs through Fast2SMS. Leave FAST2SMS_API_KEY empty to keep
+ * phone OTP switched off; set it in config/local.php to turn it on.
+ */
+defined('FAST2SMS_API_KEY') || define('FAST2SMS_API_KEY', env_or('FAST2SMS_API_KEY', ''));
+
 // Show PHP errors while developing locally. Set APP_DEBUG=0 in production.
 define('DEBUG_MODE', env_or('APP_DEBUG', '1') === '1');
 
