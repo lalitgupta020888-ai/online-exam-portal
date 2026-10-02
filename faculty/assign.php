@@ -77,13 +77,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $filters  = class_filters_from_get();
 $branches = get_branches($collegeId, false);
 
+ensure_faculty_students_table();
 $students = get_college_students($collegeId, $filters,
     ',
+     (SELECT COUNT(*) FROM faculty_students fs
+       WHERE fs.student_id = s.id AND fs.faculty_id = ? AND fs.subject = ?) AS on_my_list,
      (SELECT COUNT(*) FROM exam_assignments a
        WHERE a.exam_id = ? AND a.student_id = s.id) AS assigned,
      (SELECT COUNT(*) FROM attempts t
        WHERE t.exam_id = ? AND t.student_id = s.id) AS attempted',
-    [$examId, $examId]);
+    [(int)$faculty['id'], $exam['subject'], $examId, $examId]);
 
 $assignedNow = count(array_filter($students, fn($s) => (int)$s['assigned'] > 0));
 
@@ -145,6 +148,9 @@ require_once __DIR__ . '/includes/faculty_header.php';
       <button type="button" class="btn btn-sm btn-outline-secondary" id="selectNone">
         Clear shown
       </button>
+      <button type="button" class="btn btn-sm btn-outline-success" id="selectMine">
+        <i class="bi bi-person-check me-1"></i>Select my <?= e($exam['subject']) ?> students
+      </button>
       <?php if ($exam['target_branch_id'] || $exam['target_year'] || $exam['target_semester']): ?>
         <button type="button" class="btn btn-sm btn-outline-info" id="selectTarget"
                 data-branch="<?= (int)$exam['target_branch_id'] ?>"
@@ -175,6 +181,7 @@ require_once __DIR__ . '/includes/faculty_header.php';
                        data-branch="<?= (int)$s['branch_id'] ?>"
                        data-year="<?= (int)$s['study_year'] ?>"
                        data-sem="<?= (int)$s['semester'] ?>"
+                       data-mine="<?= (int)$s['on_my_list'] > 0 ? 1 : 0 ?>"
                        <?= (int)$s['assigned'] ? 'checked' : '' ?>>
               </td>
               <td>
@@ -235,6 +242,11 @@ require_once __DIR__ . '/includes/faculty_header.php';
   });
   document.getElementById('selectNone').addEventListener('click', function () {
     boxes.forEach(function (b) { b.checked = false; }); refresh();
+  });
+
+  document.getElementById('selectMine').addEventListener('click', function () {
+    boxes.forEach(function (b) { if (b.dataset.mine === '1') { b.checked = true; } });
+    refresh();
   });
 
   var target = document.getElementById('selectTarget');

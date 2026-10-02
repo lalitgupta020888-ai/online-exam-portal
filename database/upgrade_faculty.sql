@@ -70,3 +70,23 @@ CREATE TABLE IF NOT EXISTS `question_imports` (
   CONSTRAINT `fk_import_faculty` FOREIGN KEY (`faculty_id`)
     REFERENCES `faculty` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- Faculty roster - the students a faculty member teaches, per subject.
+-- Faculty add and remove rows here; only an administrator can delete the
+-- student account itself.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `faculty_students` (
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `faculty_id` INT UNSIGNED NOT NULL,
+  `student_id` INT UNSIGNED NOT NULL,
+  `subject`    VARCHAR(120) NOT NULL,
+  `added_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_roster` (`faculty_id`,`student_id`,`subject`),
+  KEY `idx_roster_student` (`student_id`),
+  CONSTRAINT `fk_roster_faculty` FOREIGN KEY (`faculty_id`)
+    REFERENCES `faculty` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_roster_student` FOREIGN KEY (`student_id`)
+    REFERENCES `students` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

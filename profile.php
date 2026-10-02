@@ -253,6 +253,7 @@ require_once __DIR__ . '/includes/header.php';
                   <h5 class="mb-0">My class</h5>
                   <span class="small text-muted-2">
                     Keep this current - papers are allotted branch and semester wise.
+                    Promoted to the next year? Update your year and semester here.
                   </span>
                 </div>
               </div>

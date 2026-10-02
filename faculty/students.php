@@ -32,9 +32,13 @@ $where  = ['s.college_id = :college'];
 $params['college'] = $collegeId;
 
 if ($scope === 'mine') {
-    $where[] = 'EXISTS (SELECT 1 FROM exam_assignments a JOIN exams e ON e.id = a.exam_id
-                         WHERE a.student_id = s.id AND e.faculty_id = :fac4)';
+    ensure_faculty_students_table();
+    $where[] = '(EXISTS (SELECT 1 FROM exam_assignments a JOIN exams e ON e.id = a.exam_id
+                          WHERE a.student_id = s.id AND e.faculty_id = :fac4)
+              OR EXISTS (SELECT 1 FROM faculty_students fs
+                          WHERE fs.student_id = s.id AND fs.faculty_id = :fac5))';
     $params['fac4'] = $faculty['id'];
+    $params['fac5'] = $faculty['id'];
 }
 if ($search !== '') {
     $where[] = '(s.name LIKE :like OR s.email LIKE :like2)';
@@ -69,7 +73,7 @@ require_once __DIR__ . '/includes/faculty_header.php';
       <label class="form-label" for="scope">Show</label>
       <select class="form-select" id="scope" name="scope">
         <option value="mine" <?= $scope === 'mine' ? 'selected' : '' ?>>
-          Only students assigned to my exams</option>
+          My students (my list or my exams)</option>
         <option value="all" <?= $scope === 'all' ? 'selected' : '' ?>>
           All registered students</option>
       </select>

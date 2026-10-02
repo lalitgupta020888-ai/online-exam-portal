@@ -344,6 +344,47 @@ function get_college_students(?int $collegeId, array $filters = [], string $extr
     return $st->fetchAll();
 }
 
+/**
+ * Make sure the faculty roster table exists, so a live site that has not
+ * re-run upgrade.php still works. Runs the CREATE at most once per request.
+ */
+function ensure_faculty_students_table(): void
+{
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    db()->exec('CREATE TABLE IF NOT EXISTS `faculty_students` (
+        `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `faculty_id` INT UNSIGNED NOT NULL,
+        `student_id` INT UNSIGNED NOT NULL,
+        `subject`    VARCHAR(120) NOT NULL,
+        `added_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uq_roster` (`faculty_id`,`student_id`,`subject`),
+        KEY `idx_roster_student` (`student_id`),
+        CONSTRAINT `fk_roster_faculty` FOREIGN KEY (`faculty_id`)
+          REFERENCES `faculty` (`id`) ON DELETE CASCADE,
+        CONSTRAINT `fk_roster_student` FOREIGN KEY (`student_id`)
+          REFERENCES `students` (`id`) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+    $done = true;
+}
+
+/** Subjects this faculty member teaches: their roster subjects plus their paper subjects. */
+function faculty_subjects(int $facultyId): array
+{
+    ensure_faculty_students_table();
+    $st = db()->prepare(
+        'SELECT subject FROM faculty_students WHERE faculty_id = ?
+         UNION
+         SELECT subject FROM exams WHERE faculty_id = ? AND subject <> ""
+         ORDER BY subject'
+    );
+    $st->execute([$facultyId, $facultyId]);
+    return $st->fetchAll(PDO::FETCH_COLUMN);
+}
+
 /** Read branch / year / semester filters out of the query string. */
 function class_filters_from_get(): array
 {

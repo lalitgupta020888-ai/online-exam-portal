@@ -14,6 +14,7 @@ $navItems = [
     'exams'     => ['exams.php',   'journal-text',    'My Exams'],
     'evaluate'  => ['evaluate.php','pencil-square',   'Evaluate Answers'],
     'results'   => ['results.php', 'bar-chart-line',  'Results'],
+    'mystudents'=> ['my_students.php','person-check', 'My Students'],
     'students'  => ['students.php','people',          'Student Analysis'],
     'profile'   => ['profile.php', 'person-gear',     'My Profile'],
 ];

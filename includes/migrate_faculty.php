@@ -19,7 +19,7 @@ function migrate_faculty(PDO $pdo, string $dbName): array
     foreach (sql_file_statements(__DIR__ . '/../database/upgrade_faculty.sql') as $sql) {
         $pdo->exec($sql);
     }
-    $log[] = ['ok', 'Tables faculty, exam_assignments and question_imports are present'];
+    $log[] = ['ok', 'Tables faculty, exam_assignments, question_imports and faculty_students are present'];
 
     // ---------- 2. New columns ----------
     $columns = [
