@@ -50,7 +50,11 @@ $exams = get_faculty_exams((int)$faculty['id']);
         </a>
         <a class="btn btn-outline-secondary" target="_blank" rel="noopener"
            href="<?= url('faculty/print_results.php?exam_id=' . $examId) ?>">
-          <i class="bi bi-printer me-1"></i>Print / PDF
+          <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+        </a>
+        <a class="btn btn-outline-success"
+           href="<?= url('faculty/export_results.php?exam_id=' . $examId) ?>">
+          <i class="bi bi-file-earmark-excel me-1"></i>Excel
         </a>
       </div>
     <?php endif; ?>

@@ -162,7 +162,11 @@ foreach ($exams as $exam) {
                 </a>
                 <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"
                    href="<?= url('faculty/print_results.php?exam_id=' . (int)$exam['id']) ?>">
-                  <i class="bi bi-printer me-1"></i>Print / PDF
+                  <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                </a>
+                <a class="btn btn-sm btn-outline-success"
+                   href="<?= url('faculty/export_results.php?exam_id=' . (int)$exam['id']) ?>">
+                  <i class="bi bi-file-earmark-excel me-1"></i>Excel
                 </a>
               </div>
             </div>
