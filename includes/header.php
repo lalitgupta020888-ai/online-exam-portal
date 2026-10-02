@@ -61,9 +61,9 @@ $student   = current_student();
 
         <?php if ($student): ?>
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button"
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button"
                data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-person-circle me-1"></i><?= e($student['name']) ?>
+              <?= avatar_html($student, 'avatar-sm me-2') ?><?= e($student['name']) ?>
             </a>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0">
               <li><a class="dropdown-item" href="<?= url('dashboard.php') ?>">

@@ -81,7 +81,7 @@ $pendingCount = (int)$st->fetchColumn();
       <h5 class="mb-0"><?= e($pageTitle) ?></h5>
       <a href="<?= url('faculty/profile.php') ?>"
          class="d-flex align-items-center gap-2 text-decoration-none topbar-user">
-        <span class="avatar-sm"><?= e(initials($faculty['name'])) ?></span>
+        <?= avatar_html($faculty, 'avatar-sm') ?>
         <span class="small lh-sm">
           <strong class="d-block text-dark"><?= e($faculty['name']) ?></strong>
           <span class="text-muted-2">

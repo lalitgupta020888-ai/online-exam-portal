@@ -17,6 +17,15 @@ $f = $faculty;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
 
+    /* -------------------------- Profile photo ------------------------- */
+    if (in_array(post('action'), ['photo', 'photo_remove'], true)) {
+        $remove = post('action') === 'photo_remove';
+        $error  = save_profile_photo('faculty', $faculty, $remove);
+        set_flash($error === '' ? 'success' : 'danger',
+                  $error === '' ? ($remove ? 'Your photo has been removed.' : 'Your photo has been updated.') : $error);
+        redirect('faculty/profile.php');
+    }
+
     /* ------------------------- Update profile ------------------------- */
     if (post('action') === 'profile') {
         $openTab = 'profile';
@@ -137,7 +146,7 @@ require_once __DIR__ . '/includes/faculty_header.php';
   <div class="profile-header-bg"></div>
   <div class="card-body position-relative">
     <div class="d-flex flex-wrap align-items-start gap-3">
-      <div class="avatar-xl"><?= e(initials($faculty['name'])) ?></div>
+      <?= profile_photo_picker($faculty) ?>
       <div class="flex-grow-1">
         <h3 class="mb-1"><?= e($faculty['name']) ?></h3>
         <div class="text-muted-2">

@@ -178,7 +178,7 @@ require_once __DIR__ . '/includes/admin_header.php';
                 ? 'border-start border-4 border-warning' : '' ?>">
         <div class="card-body">
           <div class="d-flex align-items-start gap-3 mb-3">
-            <span class="avatar-md"><?= e(initials($r['name'])) ?></span>
+            <?= avatar_html($r, 'avatar-md') ?>
             <div class="flex-grow-1">
               <h6 class="mb-1"><?= e($r['name']) ?></h6>
               <div class="small text-muted-2">

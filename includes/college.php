@@ -280,17 +280,27 @@ define('LOGO_MAX_BYTES', 2 * 1024 * 1024);      // 2 MB is plenty for a crest
  */
 function store_college_logo(array $file): array
 {
+    return store_uploaded_image($file, LOGO_DIR, 'logo', 'The logo');
+}
+
+/**
+ * Validate an uploaded image and move it into $dir under a random name.
+ *
+ * @return array{0:?string,1:string} [stored file name, error message]
+ */
+function store_uploaded_image(array $file, string $dir, string $prefix, string $what): array
+{
     if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
         return [null, ''];                       // nothing uploaded - not an error
     }
     if ($file['error'] !== UPLOAD_ERR_OK) {
-        return [null, 'The logo could not be uploaded. Please try a smaller file.'];
+        return [null, "$what could not be uploaded. Please try a smaller file."];
     }
     if (!is_uploaded_file($file['tmp_name'])) {
         return [null, 'Invalid upload.'];
     }
     if ($file['size'] > LOGO_MAX_BYTES) {
-        return [null, 'The logo must be 2 MB or smaller.'];
+        return [null, "$what must be 2 MB or smaller."];
     }
 
     // Trust the image header, not the sent file name or MIME type.
@@ -304,15 +314,109 @@ function store_college_logo(array $file): array
         return [null, 'Use a PNG, JPG, GIF or WEBP image.'];
     }
 
-    if (!is_dir(LOGO_DIR) && !@mkdir(LOGO_DIR, 0777, true)) {
-        return [null, 'The server cannot write to uploads/logos.'];
+    if (!is_dir($dir) && !@mkdir($dir, 0777, true)) {
+        return [null, 'The server cannot write to uploads/' . basename($dir) . '.'];
     }
 
-    $name = 'logo_' . bin2hex(random_bytes(8)) . '.' . $ext;
-    if (!move_uploaded_file($file['tmp_name'], LOGO_DIR . '/' . $name)) {
-        return [null, 'The logo could not be saved.'];
+    $name = $prefix . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+    if (!move_uploaded_file($file['tmp_name'], $dir . '/' . $name)) {
+        return [null, "$what could not be saved."];
     }
     return [$name, ''];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Profile photos (students and faculty)                              */
+/* ------------------------------------------------------------------ */
+
+define('PHOTO_DIR', __DIR__ . '/../uploads/photos');
+
+/**
+ * Add the photo column to students / faculty on a site that has not re-run
+ * upgrade.php. Only called when a photo is saved, so pages never pay for it.
+ */
+function ensure_photo_column(string $table): void
+{
+    $st = db()->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS
+                          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+    $st->execute([$table, 'photo']);
+    if (!(int)$st->fetchColumn()) {
+        db()->exec("ALTER TABLE `$table` ADD COLUMN `photo` VARCHAR(255) DEFAULT NULL");
+    }
+}
+
+/**
+ * Handle the photo form of a profile page: action "photo" uploads a new one,
+ * "photo_remove" clears it. Returns an error message, or '' on success.
+ *
+ * @param string $table students | faculty
+ */
+function save_profile_photo(string $table, array $account, bool $remove): string
+{
+    if (!in_array($table, ['students', 'faculty'], true)) {
+        return 'Invalid account.';
+    }
+    ensure_photo_column($table);
+
+    $name = null;
+    if (!$remove) {
+        [$name, $error] = store_uploaded_image($_FILES['photo'] ?? [], PHOTO_DIR, 'photo', 'The photo');
+        if ($error !== '') {
+            return $error;
+        }
+        if ($name === null) {
+            return 'Choose a photo to upload.';
+        }
+    }
+    db()->prepare("UPDATE `$table` SET photo = ? WHERE id = ?")->execute([$name, (int)$account['id']]);
+    if (!empty($account['photo'])) {
+        $old = PHOTO_DIR . '/' . basename($account['photo']);
+        if (is_file($old)) {
+            @unlink($old);
+        }
+    }
+    return '';
+}
+
+/**
+ * The big avatar on a profile page with its own upload / remove form.
+ * Picking a file submits straight away.
+ */
+function profile_photo_picker(array $person): string
+{
+    ob_start(); ?>
+    <div class="text-center" style="width:110px">
+      <div class="d-flex justify-content-center"><?= avatar_html($person, 'avatar-xl') ?></div>
+      <form method="post" enctype="multipart/form-data" class="mt-2">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="photo">
+        <label class="btn btn-sm btn-outline-primary py-0 px-2 small mb-1" title="JPG, PNG, GIF or WEBP, up to 2 MB">
+          <i class="bi bi-camera me-1"></i><?= empty($person['photo']) ? 'Add photo' : 'Change' ?>
+          <input type="file" name="photo" accept="image/png,image/jpeg,image/gif,image/webp"
+                 class="d-none" onchange="this.form.submit()">
+        </label>
+        <?php if (!empty($person['photo'])): ?>
+          <button class="btn btn-sm btn-link text-danger py-0 px-1 small d-block mx-auto"
+                  name="action" value="photo_remove" data-confirm="Remove your photo?">Remove</button>
+        <?php endif; ?>
+      </form>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
+/**
+ * Round avatar for a student / faculty row: their photo, or their initials.
+ *
+ * @param string $class avatar-xl | avatar-md | avatar-sm
+ */
+function avatar_html(array $person, string $class = 'avatar-sm'): string
+{
+    if (!empty($person['photo'])) {
+        return '<img src="' . e(url('uploads/photos/' . rawurlencode(basename($person['photo']))))
+             . '" alt="" class="' . e($class) . ' avatar-photo" style="object-fit:cover;background:#fff">';
+    }
+    return '<span class="' . e($class) . '">' . e(initials($person['name'] ?? '?')) . '</span>';
 }
 
 /** Remove a logo file that is no longer referenced. */

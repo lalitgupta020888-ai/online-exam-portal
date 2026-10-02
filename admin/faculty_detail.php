@@ -84,7 +84,7 @@ require_once __DIR__ . '/includes/admin_header.php';
   <div class="profile-header-bg"></div>
   <div class="card-body position-relative">
     <div class="d-flex flex-wrap align-items-start gap-3">
-      <div class="avatar-xl"><?= e(initials($f['name'])) ?></div>
+      <?= avatar_html($f, 'avatar-xl') ?>
       <div class="flex-grow-1">
         <h3 class="mb-1"><?= e($f['name']) ?></h3>
         <div class="text-muted-2">

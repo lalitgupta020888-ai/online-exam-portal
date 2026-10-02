@@ -61,6 +61,10 @@ function migrate_college(PDO $pdo, string $dbName): array
         ['exams', 'target_semester',  'ALTER TABLE `exams` ADD COLUMN `target_semester` TINYINT UNSIGNED
                                         DEFAULT NULL AFTER `target_year`'],
 
+        // Profile photos (file name inside uploads/photos/)
+        ['students', 'photo',      'ALTER TABLE `students` ADD COLUMN `photo` VARCHAR(255) DEFAULT NULL'],
+        ['faculty',  'photo',      'ALTER TABLE `faculty` ADD COLUMN `photo` VARCHAR(255) DEFAULT NULL'],
+
         // The administrator each faculty member registered under
         ['faculty',  'admin_id',   'ALTER TABLE `faculty` ADD COLUMN `admin_id` INT UNSIGNED
                                      DEFAULT NULL AFTER `college_id`'],

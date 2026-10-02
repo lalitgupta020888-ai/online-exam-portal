@@ -722,6 +722,7 @@ h2 { font-weight: 800; letter-spacing: -.028em; }
   box-shadow: 0 16px 34px -18px rgba(11, 16, 32, .9);
   margin-top: -3.6rem;      /* lifts it half way over the banner */
 }
+.avatar-photo { object-fit: cover; background: var(--oep-surface); }
 .avatar-md { width: 48px; height: 48px; font-size: 1.05rem; }
 .avatar-sm { width: 34px; height: 34px; font-size: .8rem; }
 
