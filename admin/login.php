@@ -16,16 +16,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = post('username');
     $password = post('password');
 
+    $key = login_key('admin', $username);
+
     if ($username === '' || $password === '') {
         $error = 'Please enter your username and password.';
+    } elseif (($error = login_blocked($key)) !== '') {
+        // locked out for a while - message already set
     } else {
         $st = db()->prepare('SELECT * FROM admins WHERE username = ?');
         $st->execute([$username]);
         $admin = $st->fetch();
 
         if (!$admin || !password_verify($password, $admin['password_hash'])) {
+            login_failed($key);
             $error = 'Invalid username or password.';
         } else {
+            login_succeeded($key);
             login_admin($admin);
             set_flash('success', 'Welcome back, ' . $admin['name'] . '.');
             redirect('admin/index.php');

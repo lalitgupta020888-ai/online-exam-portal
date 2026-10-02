@@ -94,8 +94,9 @@ defined('SMTP_FROM_NAME') || define('SMTP_FROM_NAME', env_or('SMTP_FROM_NAME', '
  */
 defined('FAST2SMS_API_KEY') || define('FAST2SMS_API_KEY', env_or('FAST2SMS_API_KEY', ''));
 
-// Show PHP errors while developing locally. Set APP_DEBUG=0 in production.
-define('DEBUG_MODE', env_or('APP_DEBUG', '1') === '1');
+// PHP errors stay hidden unless APP_DEBUG=1 (or DEBUG_MODE true in config/local.php),
+// so a live site never shows paths, SQL or database details to visitors.
+defined('DEBUG_MODE') || define('DEBUG_MODE', env_or('APP_DEBUG', '0') === '1');
 
 if (DEBUG_MODE) {
     error_reporting(E_ALL);

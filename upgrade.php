@@ -12,6 +12,21 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/migrate_faculty.php';
 require_once __DIR__ . '/includes/migrate_college.php';
 
+// Once an administrator exists, only a signed in administrator may upgrade.
+require_once __DIR__ . '/includes/auth.php';
+try {
+    $hasAdmins = (int)db()->query('SELECT COUNT(*) FROM admins')->fetchColumn() > 0;
+} catch (Throwable $e) {
+    $hasAdmins = false;
+}
+if ($hasAdmins && empty($_SESSION['admin_id'])) {
+    http_response_code(403);
+    exit('Sign in as an administrator first, then open upgrade.php again.');
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $hasAdmins) {
+    verify_csrf();
+}
+
 $run    = ($_SERVER['REQUEST_METHOD'] === 'POST');
 $log    = [];
 $failed = false;
@@ -64,6 +79,7 @@ if ($run) {
               as they do now.</li>
         </ul>
         <form method="post">
+          <?= $hasAdmins ? csrf_field() : '' ?>
           <button class="btn btn-primary w-100 py-2">
             <i class="bi bi-arrow-up-circle me-1"></i>Run Upgrade
           </button>

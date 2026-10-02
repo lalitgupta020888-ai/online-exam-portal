@@ -51,6 +51,16 @@ if ($row = $st->fetch()) {
     redirect('exam.php?attempt=' . (int)$row['id']);
 }
 
+// One attempt per paper: a submitted paper can never be taken again.
+$st = db()->prepare("SELECT id FROM attempts
+                      WHERE student_id = ? AND exam_id = ? AND status <> 'in_progress'
+                      ORDER BY id DESC LIMIT 1");
+$st->execute([$student['id'], $examId]);
+if ($done = $st->fetchColumn()) {
+    set_flash('info', 'You have already submitted this examination.');
+    redirect('result.php?attempt=' . (int)$done);
+}
+
 $now     = time();
 $expires = $now + ((int)$exam['duration_minutes'] * 60);
 

@@ -39,8 +39,9 @@ if ($mode === 'exam') {
     $columns = array_values(array_filter($sheet['columns'], fn($c) => $c[3]));
     $title   = $exam['title'];
 } else {
-    $st = db()->prepare('SELECT * FROM students WHERE id = ?');
-    $st->execute([$studentId]);
+    // Only students of my own college.
+    $st = db()->prepare('SELECT * FROM students WHERE id = ? AND college_id = ?');
+    $st->execute([$studentId, $faculty['college_id']]);
     $student = $st->fetch();
     if (!$student) {
         set_flash('danger', 'Student not found.');

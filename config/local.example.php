@@ -20,3 +20,6 @@ define('SMTP_PASS', 'abcdefghijklmnop');
 
 // Phone OTP through Fast2SMS - leave empty to keep it switched off.
 define('FAST2SMS_API_KEY', '');
+
+// Keep PHP errors hidden from visitors on a live site.
+define('DEBUG_MODE', false);

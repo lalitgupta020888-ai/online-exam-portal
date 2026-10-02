@@ -12,6 +12,20 @@
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/sql_util.php';
 
+// The installer drops every table, so it refuses to run on a database that
+// already has an administrator. Nobody can wipe a live site through it.
+try {
+    $probe = new PDO(sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', DB_HOST, DB_PORT, DB_NAME),
+                     DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+    $installed = (int)$probe->query('SELECT COUNT(*) FROM admins')->fetchColumn() > 0;
+} catch (Throwable $e) {
+    $installed = false;     // no database or no admins table yet - a genuine fresh install
+}
+if ($installed) {
+    http_response_code(403);
+    exit('The portal is already installed. Delete install.php from the server.');
+}
+
 $run     = ($_SERVER['REQUEST_METHOD'] === 'POST');
 $log     = [];
 $failed  = false;

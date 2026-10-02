@@ -7,8 +7,9 @@ require_once __DIR__ . '/../includes/auth.php';
 $faculty = require_faculty();
 
 $studentId = get_int('student_id');
-$st = db()->prepare('SELECT * FROM students WHERE id = ?');
-$st->execute([$studentId]);
+// Only students of my own college.
+$st = db()->prepare('SELECT * FROM students WHERE id = ? AND college_id = ?');
+$st->execute([$studentId, $faculty['college_id']]);
 $student = $st->fetch();
 
 if (!$student) {

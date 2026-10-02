@@ -16,14 +16,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = post('username');
     $password = post('password');
 
+    $key = login_key('faculty', $username);
+
     if ($username === '' || $password === '') {
         $error = 'Please enter your username and password.';
+    } elseif (($error = login_blocked($key)) !== '') {
+        // locked out for a while - message already set
     } else {
         $st = db()->prepare('SELECT * FROM faculty WHERE username = ? OR email = ?');
         $st->execute([$username, $username]);
         $faculty = $st->fetch();
 
         if (!$faculty || !password_verify($password, $faculty['password_hash'])) {
+            login_failed($key);
             $error = 'Invalid username or password.';
         } elseif ($faculty['status'] === 'pending') {
             $error = 'Your registration is still waiting for administrator approval. '
@@ -31,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($faculty['status'] === 'suspended' || !(int)$faculty['is_active']) {
             $error = 'This faculty account has been deactivated. Please contact the administrator.';
         } else {
+            login_succeeded($key);
             login_faculty($faculty);
             set_flash('success', 'Welcome back, ' . $faculty['name'] . '.');
             redirect('faculty/index.php');

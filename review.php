@@ -20,6 +20,13 @@ if ($attempt['status'] === 'in_progress') {
 
 $exam = get_exam((int)$attempt['exam_id']);
 
+// The answer key stays hidden until the whole class has finished or the
+// faculty has released the results, so it cannot be passed to others.
+if (!exam_progress($exam)['results_visible']) {
+    set_flash('info', 'The answer key will be available once your faculty releases the results.');
+    redirect('result.php?attempt=' . $attemptId);
+}
+
 // Questions + options + what the student chose.
 $qs = db()->prepare(
     'SELECT q.id, q.question_text, q.type, q.marks, q.explanation, q.difficulty, q.category,

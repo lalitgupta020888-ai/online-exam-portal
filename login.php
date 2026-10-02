@@ -19,8 +19,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email    = post('email');
     $password = post('password');
 
+    $key = login_key('student', $email);
+
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $password === '') {
         $error = 'Please enter your email address and password.';
+    } elseif (($error = login_blocked($key)) !== '') {
+        // locked out for a while - message already set
     } else {
         $st = db()->prepare('SELECT * FROM students WHERE email = ?');
         $st->execute([$email]);
@@ -28,10 +32,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Same message for "no such user" and "wrong password" on purpose.
         if (!$student || !password_verify($password, $student['password_hash'])) {
+            login_failed($key);
             $error = 'Invalid email address or password.';
         } elseif (!(int)$student['is_active']) {
             $error = 'This account has been deactivated. Contact the administrator.';
         } else {
+            login_succeeded($key);
             login_student($student);
             $target = $_SESSION['redirect_after_login'] ?? '';
             unset($_SESSION['redirect_after_login']);

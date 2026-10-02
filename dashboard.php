@@ -166,6 +166,10 @@ require_once __DIR__ . '/includes/header.php';
                        class="btn btn-warning w-100 fw-bold">
                       <i class="bi bi-arrow-right-circle me-1"></i>Resume Exam
                     </a>
+                  <?php elseif ($past): ?>
+                    <a href="<?= url('results.php') ?>" class="btn btn-outline-success w-100">
+                      <i class="bi bi-check2-circle me-1"></i>Submitted - view result
+                    </a>
                   <?php else: ?>
                     <a href="<?= url('instructions.php?exam_id=' . $eid) ?>" class="btn btn-primary w-100">
                       <i class="bi bi-play-circle me-1"></i>Start Exam

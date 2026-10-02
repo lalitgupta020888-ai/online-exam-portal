@@ -9,6 +9,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
         'httponly' => true,
         'samesite' => 'Lax',
+        // Never send the session cookie over plain HTTP once the site is on HTTPS.
+        'secure'   => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
+                      || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https',
     ]);
     session_name('OEP_SESSION');
     session_start();
@@ -62,6 +65,77 @@ function verify_csrf(bool $json = false): void
 }
 
 /* ------------------------------------------------------------------ */
+/*  Login throttling                                                   */
+/* ------------------------------------------------------------------ */
+
+define('LOGIN_MAX_PER_ACCOUNT', 5);     // wrong passwords per account ...
+define('LOGIN_MAX_PER_IP', 20);         // ... or per address ...
+define('LOGIN_WINDOW_MINUTES', 15);     // ... within this many minutes
+
+function login_attempts_table(): void
+{
+    static $done = false;
+    if (!$done) {
+        db()->exec('CREATE TABLE IF NOT EXISTS `login_attempts` (
+            `id`           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `ident`        VARCHAR(190) NOT NULL,
+            `ip`           VARCHAR(45)  NOT NULL,
+            `attempted_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_login_ident` (`ident`, `attempted_at`),
+            KEY `idx_login_ip` (`ip`, `attempted_at`)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+        $done = true;
+    }
+}
+
+/** "role:identifier" so a student and a faculty with the same email count apart. */
+function login_key(string $role, string $ident): string
+{
+    return $role . ':' . mb_strtolower(mb_substr(trim($ident), 0, 150));
+}
+
+/** Error message when this login is locked out, otherwise ''. */
+function login_blocked(string $key): string
+{
+    login_attempts_table();
+    $since = date('Y-m-d H:i:s', time() - LOGIN_WINDOW_MINUTES * 60);
+    $st = db()->prepare('SELECT
+            (SELECT COUNT(*) FROM login_attempts WHERE ident = ? AND attempted_at > ?),
+            (SELECT COUNT(*) FROM login_attempts WHERE ip = ? AND attempted_at > ?)');
+    $st->execute([$key, $since, client_ip(), $since]);
+    [$byAccount, $byIp] = $st->fetch(PDO::FETCH_NUM);
+    if ((int)$byAccount >= LOGIN_MAX_PER_ACCOUNT || (int)$byIp >= LOGIN_MAX_PER_IP) {
+        return 'Too many failed sign in attempts. Please wait ' . LOGIN_WINDOW_MINUTES
+             . ' minutes and try again, or reset your password.';
+    }
+    return '';
+}
+
+function login_failed(string $key): void
+{
+    login_attempts_table();
+    db()->prepare('INSERT INTO login_attempts (ident, ip, attempted_at) VALUES (?, ?, ?)')
+        ->execute([$key, client_ip(), date('Y-m-d H:i:s')]);
+    // Keep the table small.
+    if (random_int(1, 50) === 1) {
+        db()->prepare('DELETE FROM login_attempts WHERE attempted_at < ?')
+            ->execute([date('Y-m-d H:i:s', time() - 86400)]);
+    }
+}
+
+function login_succeeded(string $key): void
+{
+    login_attempts_table();
+    db()->prepare('DELETE FROM login_attempts WHERE ident = ?')->execute([$key]);
+}
+
+function client_ip(): string
+{
+    return substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45);
+}
+
+/* ------------------------------------------------------------------ */
 /*  Student session                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -85,7 +159,8 @@ function current_student(): ?array
     }
     static $cache = null;
     if ($cache === null) {
-        $st = db()->prepare('SELECT * FROM students WHERE id = ?');
+        // A deactivated student is signed out on their next request.
+        $st = db()->prepare('SELECT * FROM students WHERE id = ? AND is_active = 1');
         $st->execute([$_SESSION['student_id']]);
         $cache = $st->fetch() ?: null;
     }

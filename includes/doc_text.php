@@ -20,6 +20,10 @@
 /*  Entry point                                                        */
 /* ------------------------------------------------------------------ */
 
+// Largest size one compressed stream may expand to, so a crafted "zip bomb"
+// cannot exhaust the server memory.
+const DOC_MAX_INFLATE = 20 * 1024 * 1024;
+
 /**
  * @return array{text:string,type:string,warning:string}
  */
@@ -138,9 +142,9 @@ function pdf_collect_streams(string $bin): array
         $raw = substr($bin, $dataStart, $end - $dataStart);
         $offset = $end + 9;
 
-        $decoded = @gzuncompress($raw);
-        if ($decoded === false) { $decoded = @gzinflate($raw); }
-        if ($decoded === false) { $decoded = @gzinflate(substr($raw, 2)); }
+        $decoded = @gzuncompress($raw, DOC_MAX_INFLATE);
+        if ($decoded === false) { $decoded = @gzinflate($raw, DOC_MAX_INFLATE); }
+        if ($decoded === false) { $decoded = @gzinflate(substr($raw, 2), DOC_MAX_INFLATE); }
         if ($decoded === false) { $decoded = $raw; }
 
         if ($decoded !== '') {
@@ -391,7 +395,7 @@ function zip_read_entry(string $bin, string $wanted): ?string
             $data = substr($bin, $dataStart, $h['csize']);
 
             if ($h['method'] === 8) {
-                $out = @gzinflate($data);
+                $out = @gzinflate($data, DOC_MAX_INFLATE);
                 return $out === false ? null : $out;
             }
             return $h['method'] === 0 ? $data : null;
