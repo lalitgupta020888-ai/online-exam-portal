@@ -96,6 +96,25 @@ $st = db()->prepare('SELECT subject, COUNT(*) AS n FROM faculty_students
 $st->execute([$facultyId]);
 $subjectCounts = array_column($st->fetchAll(), 'n', 'subject');
 
+// One button per class (branch + year + semester) with its head count, so a
+// single click shows just that class. "My list" counts only my subject list.
+$classSql = 'SELECT s.branch_id, b.name AS branch_name, s.study_year, s.semester, COUNT(*) AS n
+               FROM students s
+               JOIN branches b ON b.id = s.branch_id';
+$classParams = [];
+if ($view === 'mine') {
+    $classSql .= ' JOIN faculty_students fs ON fs.student_id = s.id
+                    AND fs.faculty_id = ? AND fs.subject = ?';
+    $classParams = [$facultyId, $subjectFilter];
+}
+$classSql .= ' WHERE s.college_id = ?
+             GROUP BY s.branch_id, b.name, s.study_year, s.semester
+             ORDER BY b.name, s.study_year, s.semester';
+$classParams[] = $collegeId;
+$st = db()->prepare($classSql);
+$st->execute($classParams);
+$classes = $st->fetchAll();
+
 $query = http_build_query(array_filter([
     'view'       => $view,
     'subject'    => $view === 'mine' ? $subjectFilter : '',
@@ -150,6 +169,40 @@ require_once __DIR__ . '/includes/faculty_header.php';
         <?= e($sub) ?> <span class="badge bg-light text-dark ms-1"><?= (int)($subjectCounts[$sub] ?? 0) ?></span>
       </a>
     <?php endforeach; ?>
+  </div>
+<?php endif; ?>
+
+<?php if ($classes): ?>
+  <div class="card border-0 mb-3">
+    <div class="card-body">
+      <div class="small text-muted-2 mb-2"><i class="bi bi-diagram-3 me-1"></i>Choose a class</div>
+      <div class="d-flex flex-wrap gap-2">
+        <?php
+          $base = ['view' => $view] + ($view === 'mine' ? ['subject' => $subjectFilter] : []);
+          $anyClass = $filters['branch_id'] || $filters['study_year'] || $filters['semester'];
+        ?>
+        <a class="btn btn-sm <?= $anyClass ? 'btn-outline-secondary' : 'btn-secondary' ?>"
+           href="<?= url('faculty/my_students.php?' . http_build_query($base)) ?>">
+          All classes <span class="badge bg-light text-dark ms-1"><?= array_sum(array_column($classes, 'n')) ?></span>
+        </a>
+        <?php foreach ($classes as $c):
+            $active = (int)$filters['branch_id'] === (int)$c['branch_id']
+                   && (int)$filters['study_year'] === (int)$c['study_year']
+                   && (int)$filters['semester'] === (int)$c['semester'];
+            $label = $c['branch_name']
+                   . ($c['study_year'] ? ' - ' . str_replace('Year', 'Yr.', year_label((int)$c['study_year'])) : '')
+                   . ($c['semester'] ? ' / ' . (int)$c['semester'] . ' Sem' : ''); ?>
+          <a class="btn btn-sm <?= $active ? 'btn-primary' : 'btn-outline-primary' ?>"
+             href="<?= url('faculty/my_students.php?' . http_build_query($base + [
+                 'branch_id' => (int)$c['branch_id'],
+                 'study_year' => (int)$c['study_year'],
+                 'semester' => (int)$c['semester'],
+             ])) ?>">
+            <?= e($label) ?> <span class="badge bg-light text-dark ms-1"><?= (int)$c['n'] ?></span>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    </div>
   </div>
 <?php endif; ?>
 
