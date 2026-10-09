@@ -41,15 +41,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $locked->execute([$examId]);
         $lockedIds = array_map('intval', $locked->fetchAll(PDO::FETCH_COLUMN));
 
-        $keep = array_values(array_unique(array_merge($selected, $lockedIds)));
+        // Only the students that were on screen can lose the paper; anyone
+        // hidden by the subject list or the class filter keeps their allotment.
+        $shown = $_POST['shown'] ?? [];
+        if (!is_array($shown)) { $shown = []; }
+        $shown  = array_values(array_unique(array_map('intval', $shown)));
+        $remove = array_values(array_diff($shown, $selected, $lockedIds));
 
-        if ($keep) {
-            $in = implode(',', array_fill(0, count($keep), '?'));
+        if ($remove) {
+            $in = implode(',', array_fill(0, count($remove), '?'));
             $pdo->prepare("DELETE FROM exam_assignments
-                            WHERE exam_id = ? AND student_id NOT IN ($in)")
-                ->execute(array_merge([$examId], $keep));
-        } else {
-            $pdo->prepare('DELETE FROM exam_assignments WHERE exam_id = ?')->execute([$examId]);
+                            WHERE exam_id = ? AND student_id IN ($in)")
+                ->execute(array_merge([$examId], $remove));
         }
 
         $ins = $pdo->prepare(
@@ -57,27 +60,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
              VALUES (?,?,?)
              ON DUPLICATE KEY UPDATE assigned_by = VALUES(assigned_by)'
         );
-        foreach ($keep as $sid) {
+        foreach ($selected as $sid) {
             $ins->execute([$examId, $sid, $faculty['id']]);
         }
 
         $pdo->prepare("UPDATE exams SET access_mode = 'assigned' WHERE id = ?")->execute([$examId]);
         $pdo->commit();
 
-        $skipped = count(array_diff($lockedIds, $selected));
-        set_flash('success', count($keep) . ' student(s) allotted this paper'
+        $total = $pdo->prepare('SELECT COUNT(*) FROM exam_assignments WHERE exam_id = ?');
+        $total->execute([$examId]);
+        $skipped = count(array_intersect($shown, $lockedIds)) - count(array_intersect($selected, $lockedIds));
+        set_flash('success', (int)$total->fetchColumn() . ' student(s) now allotted this paper'
             . ($skipped > 0 ? " ($skipped kept because they already started it)" : '') . '.');
     } catch (Throwable $ex) {
         $pdo->rollBack();
         set_flash('danger', 'Could not update the allotment. Please try again.');
     }
-    redirect('faculty/assign.php?exam_id=' . $examId);
+    $back = post('back');
+    redirect(str_starts_with($back, 'faculty/assign.php?') ? $back : 'faculty/assign.php?exam_id=' . $examId);
 }
 
 $filters  = class_filters_from_get();
 $branches = get_branches($collegeId, false);
+$facultyId = (int)$faculty['id'];
 
 ensure_faculty_students_table();
+
+// By default only my students for this paper's subject are listed (from
+// My Students > My list); "all" falls back to every registered student.
+$view = ($_GET['view'] ?? 'mine') === 'all' ? 'all' : 'mine';
+
+// One button per class (branch + year + semester) from my subject list.
+$st = db()->prepare('SELECT s.branch_id, b.name AS branch_name, s.study_year, s.semester, COUNT(*) AS n
+                       FROM students s
+                       JOIN branches b ON b.id = s.branch_id
+                       JOIN faculty_students fs ON fs.student_id = s.id
+                            AND fs.faculty_id = ? AND fs.subject = ?
+                      WHERE s.college_id = ?
+                   GROUP BY s.branch_id, b.name, s.study_year, s.semester
+                   ORDER BY b.name, s.study_year, s.semester');
+$st->execute([$facultyId, $exam['subject'], $collegeId]);
+$classes = $st->fetchAll();
 $students = get_college_students($collegeId, $filters,
     ',
      (SELECT COUNT(*) FROM faculty_students fs
@@ -86,7 +109,20 @@ $students = get_college_students($collegeId, $filters,
        WHERE a.exam_id = ? AND a.student_id = s.id) AS assigned,
      (SELECT COUNT(*) FROM attempts t
        WHERE t.exam_id = ? AND t.student_id = s.id) AS attempted',
-    [(int)$faculty['id'], $exam['subject'], $examId, $examId]);
+    [$facultyId, $exam['subject'], $examId, $examId]);
+if ($view === 'mine') {
+    $students = array_values(array_filter($students, fn($s) => (int)$s['on_my_list'] > 0));
+}
+
+$query = http_build_query(array_filter([
+    'exam_id'    => $examId,
+    'view'       => $view === 'all' ? 'all' : '',
+    'branch_id'  => $filters['branch_id'],
+    'study_year' => $filters['study_year'],
+    'semester'   => $filters['semester'],
+    'q'          => $filters['q'],
+]));
+$backUrl = 'faculty/assign.php?' . $query;
 
 $assignedNow = count(array_filter($students, fn($s) => (int)$s['assigned'] > 0));
 
@@ -120,9 +156,9 @@ require_once __DIR__ . '/includes/faculty_header.php';
 <div class="alert alert-info d-flex align-items-start gap-2">
   <i class="bi bi-shield-lock fs-5"></i>
   <div>
-    Only the students ticked below will see this paper on their dashboard. Filter by
-    branch, year and semester, then use <strong>Select all shown</strong> to allot a whole
-    class at once.
+    Only the students ticked below will see this paper on their dashboard. The list shows
+    your <strong><?= e($exam['subject']) ?></strong> students from My Students - pick a
+    branch / class, then use <strong>Select all shown</strong> to allot the whole class at once.
   </div>
 </div>
 
@@ -134,11 +170,65 @@ require_once __DIR__ . '/includes/faculty_header.php';
   </div>
 <?php endif; ?>
 
-<?= render_class_filter(url('faculty/assign.php'), $branches, $filters, ['exam_id' => $examId]) ?>
+<ul class="nav nav-pills-premium mb-3">
+  <li><a class="nav-pill <?= $view === 'mine' ? 'active' : '' ?>"
+         href="<?= url('faculty/assign.php?exam_id=' . $examId) ?>">
+    <i class="bi bi-person-check me-1"></i>My <?= e($exam['subject']) ?> students
+    <span class="badge bg-primary-subtle text-primary-emphasis ms-1"><?= array_sum(array_column($classes, 'n')) ?></span></a></li>
+  <li><a class="nav-pill <?= $view === 'all' ? 'active' : '' ?>"
+         href="<?= url('faculty/assign.php?exam_id=' . $examId . '&view=all') ?>">
+    <i class="bi bi-people me-1"></i>All registered students</a></li>
+</ul>
+
+<?php if ($view === 'mine' && !$classes): ?>
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-circle me-1"></i>
+    You have no students on your list for <strong><?= e($exam['subject']) ?></strong> yet.
+    Add them branch wise from
+    <a href="<?= url('faculty/my_students.php?view=all') ?>" class="fw-semibold">My Students &rsaquo; Registered students</a>
+    using the subject name <strong><?= e($exam['subject']) ?></strong>.
+  </div>
+<?php endif; ?>
+
+<?php if ($view === 'mine' && $classes): ?>
+  <div class="card border-0 mb-3">
+    <div class="card-body">
+      <div class="small text-muted-2 mb-2"><i class="bi bi-diagram-3 me-1"></i>Choose a class</div>
+      <div class="d-flex flex-wrap gap-2">
+        <?php $anyClass = $filters['branch_id'] || $filters['study_year'] || $filters['semester']; ?>
+        <a class="btn btn-sm <?= $anyClass ? 'btn-outline-secondary' : 'btn-secondary' ?>"
+           href="<?= url('faculty/assign.php?exam_id=' . $examId) ?>">
+          All classes <span class="badge bg-light text-dark ms-1"><?= array_sum(array_column($classes, 'n')) ?></span>
+        </a>
+        <?php foreach ($classes as $c):
+            $active = (int)$filters['branch_id'] === (int)$c['branch_id']
+                   && (int)$filters['study_year'] === (int)$c['study_year']
+                   && (int)$filters['semester'] === (int)$c['semester'];
+            $label = $c['branch_name']
+                   . ($c['study_year'] ? ' - ' . str_replace('Year', 'Yr.', year_label((int)$c['study_year'])) : '')
+                   . ($c['semester'] ? ' / ' . (int)$c['semester'] . ' Sem' : ''); ?>
+          <a class="btn btn-sm <?= $active ? 'btn-primary' : 'btn-outline-primary' ?>"
+             href="<?= url('faculty/assign.php?' . http_build_query([
+                 'exam_id' => $examId,
+                 'branch_id' => (int)$c['branch_id'],
+                 'study_year' => (int)$c['study_year'],
+                 'semester' => (int)$c['semester'],
+             ])) ?>">
+            <?= e($label) ?> <span class="badge bg-light text-dark ms-1"><?= (int)$c['n'] ?></span>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </div>
+<?php endif; ?>
+
+<?= render_class_filter(url('faculty/assign.php'), $branches, $filters,
+    array_filter(['exam_id' => $examId, 'view' => $view === 'all' ? 'all' : ''])) ?>
 
 <form method="post">
   <?= csrf_field() ?>
   <input type="hidden" name="exam_id" value="<?= $examId ?>">
+  <input type="hidden" name="back" value="<?= e($backUrl) ?>">
 
   <div class="card border-0">
     <div class="card-body d-flex flex-wrap gap-2 align-items-center border-bottom">
@@ -176,6 +266,7 @@ require_once __DIR__ . '/includes/faculty_header.php';
           <?php foreach ($students as $s): $sid = (int)$s['id']; ?>
             <tr>
               <td>
+                <input type="hidden" name="shown[]" value="<?= $sid ?>">
                 <input class="form-check-input student-check" type="checkbox"
                        name="students[]" value="<?= $sid ?>" id="stu<?= $sid ?>"
                        data-branch="<?= (int)$s['branch_id'] ?>"
