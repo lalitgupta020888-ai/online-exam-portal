@@ -119,6 +119,51 @@ $ringTone = static fn(int $pct): string => $pct >= 75 ? 'good' : ($pct >= 50 ? '
   </div>
 </form>
 
+<!-- ----------------------------- Downloads -------------------------- -->
+<?php
+$exportPage = str_replace('attendance.php', 'attendance_export.php', $boardPage);
+$exportLink = static fn(array $q): string => url($exportPage . '?' . http_build_query(array_filter(
+    array_merge($filters, $q), static fn($v) => $v !== 0 && $v !== '')));
+?>
+<div class="card border-0 mb-4 att-download">
+  <div class="card-body row g-3 align-items-center">
+    <div class="col-lg-5">
+      <div class="d-flex align-items-center gap-3">
+        <span class="form-section-num mb-0"><i class="bi bi-cloud-arrow-down"></i></span>
+        <div>
+          <h6 class="mb-0">Download attendance</h6>
+          <span class="small text-muted-2">Uses the branch / year / semester filters above.</span>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="small fw-semibold mb-1"><?= e(date('d M Y', strtotime($date))) ?></div>
+      <div class="d-flex gap-2">
+        <a class="btn btn-sm btn-success" href="<?= $exportLink(['period' => 'day', 'date' => $date, 'format' => 'xlsx']) ?>">
+          <i class="bi bi-file-earmark-excel me-1"></i>Excel</a>
+        <a class="btn btn-sm btn-outline-danger" target="_blank" rel="noopener"
+           href="<?= $exportLink(['period' => 'day', 'date' => $date, 'format' => 'pdf']) ?>">
+          <i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+      </div>
+    </div>
+    <form method="get" action="<?= url($exportPage) ?>" class="col-sm-6 col-lg-4" data-att-month>
+      <input type="hidden" name="period" value="month">
+      <?php foreach (array_filter($filters) as $k => $v): ?>
+        <input type="hidden" name="<?= e($k) ?>" value="<?= (int)$v ?>">
+      <?php endforeach; ?>
+      <label class="small fw-semibold mb-1 d-block" for="attMonth">Whole month</label>
+      <div class="d-flex gap-2">
+        <input type="month" class="form-control form-control-sm" id="attMonth" name="month"
+               value="<?= e(substr($date, 0, 7)) ?>" max="<?= e(date('Y-m')) ?>" style="max-width: 150px">
+        <button class="btn btn-sm btn-success" name="format" value="xlsx">
+          <i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+        <button class="btn btn-sm btn-outline-danger" name="format" value="pdf"
+                formtarget="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <?php if (!$board['total']): ?>
   <div class="card empty-state text-center">
     <div class="empty-state-icon"><i class="bi bi-people"></i></div>

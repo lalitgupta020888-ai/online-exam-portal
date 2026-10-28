@@ -203,6 +203,66 @@ function attendance_breakdown(array $rows): array
     return $out;
 }
 
+/**
+ * Month register: the students of attendance_register() plus, per student,
+ * the days of $month ('YYYY-MM') they were present on.
+ *
+ * @return array{students: array, present: array<int, array<int, string>>, days: int,
+ *               counted: int[]} counted = past or current days of the month that are not Sundays
+ */
+function attendance_month(int $collegeId, string $month, array $filters = [], ?array $faculty = null): array
+{
+    $first    = $month . '-01';
+    $days     = (int)date('t', strtotime($first));
+    $students = attendance_register($collegeId, $first, $filters, $faculty);
+
+    $present = [];
+    if ($students) {
+        $ids = array_map('intval', array_column($students, 'id'));
+        $st  = db()->prepare('SELECT student_id, att_date, marked_at FROM attendance
+                               WHERE college_id = ? AND att_date BETWEEN ? AND ?
+                                 AND student_id IN (' . implode(',', $ids) . ')');
+        $st->execute([$collegeId, $first, $month . '-' . $days]);
+        foreach ($st->fetchAll() as $r) {
+            $present[(int)$r['student_id']][(int)substr($r['att_date'], 8, 2)] = $r['marked_at'];
+        }
+    }
+
+    // Days before the college started taking attendance are not counted as absent.
+    $since = attendance_start_date($collegeId) ?? date('Y-m-d');
+    $counted = [];
+    for ($d = 1; $d <= $days; $d++) {
+        $ts  = strtotime(sprintf('%s-%02d', $month, $d));
+        $day = date('Y-m-d', $ts);
+        if ($day >= $since && $day <= date('Y-m-d') && date('w', $ts) !== '0') {
+            $counted[] = $d;
+        }
+    }
+    return ['students' => $students, 'present' => $present, 'days' => $days,
+            'counted' => $counted, 'since' => $since];
+}
+
+/** First day this college took attendance: its first record or when the campus point was set. */
+function attendance_start_date(int $collegeId): ?string
+{
+    ensure_attendance_schema();
+    $st = db()->prepare('SELECT LEAST(
+                COALESCE((SELECT MIN(att_date) FROM attendance WHERE college_id = ?), DATE(c.geo_updated_at)),
+                COALESCE(DATE(c.geo_updated_at), (SELECT MIN(att_date) FROM attendance WHERE college_id = ?)))
+            FROM colleges c WHERE c.id = ?');
+    $st->execute([$collegeId, $collegeId, $collegeId]);
+    return $st->fetchColumn() ?: null;
+}
+
+/** "CSE · 2nd Year · Sem 3" for a register row. */
+function attendance_class_label(array $r): string
+{
+    return implode(' · ', array_filter([
+        $r['study_year'] ? year_label((int)$r['study_year']) : '',
+        $r['semester'] ? 'Sem ' . (int)$r['semester'] : '',
+    ])) ?: '—';
+}
+
 /** Whole number percentage, 0 when there is nothing to divide by. */
 function attendance_pct(int $present, int $total): int
 {
