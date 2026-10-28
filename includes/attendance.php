@@ -126,6 +126,80 @@ function attendance_today(int $studentId): ?array
 }
 
 /**
+ * Every student of a college with their attendance on one day.
+ * Rows carry branch_name / branch_code plus marked_at and distance_m (null = absent).
+ *
+ * @param array{branch_id?:int,study_year?:int,semester?:int} $filters
+ */
+function attendance_register(int $collegeId, string $date, array $filters = []): array
+{
+    ensure_attendance_schema();
+    $sql = 'SELECT s.id, s.name, s.enrollment_no, s.branch_id, s.study_year, s.semester,
+                   b.name AS branch_name, b.code AS branch_code,
+                   a.marked_at, a.distance_m
+              FROM students s
+         LEFT JOIN branches b   ON b.id = s.branch_id
+         LEFT JOIN attendance a ON a.student_id = s.id AND a.att_date = ?
+             WHERE s.college_id = ? AND s.is_active = 1';
+    $params = [$date, $collegeId];
+    foreach (['branch_id' => 's.branch_id', 'study_year' => 's.study_year',
+              'semester' => 's.semester'] as $key => $col) {
+        if (!empty($filters[$key])) {
+            $sql .= " AND $col = ?";
+            $params[] = (int)$filters[$key];
+        }
+    }
+    $sql .= ' ORDER BY b.name IS NULL, b.name, s.study_year, s.semester, s.name';
+    $st = db()->prepare($sql);
+    $st->execute($params);
+    return $st->fetchAll();
+}
+
+/**
+ * Group a register branch -> class ("Year · Semester") with present / total
+ * counts at every level.
+ */
+function attendance_breakdown(array $rows): array
+{
+    $out = ['present' => 0, 'total' => 0, 'branches' => []];
+    foreach ($rows as $r) {
+        $bKey = $r['branch_id'] ? (int)$r['branch_id'] : 0;
+        $cKey = (int)$r['study_year'] . '-' . (int)$r['semester'];
+        $here = $r['marked_at'] !== null ? 1 : 0;
+
+        if (!isset($out['branches'][$bKey])) {
+            $out['branches'][$bKey] = [
+                'name' => $r['branch_name'] ?? 'No branch set', 'code' => $r['branch_code'] ?? '—',
+                'present' => 0, 'total' => 0, 'classes' => [],
+            ];
+        }
+        $b =& $out['branches'][$bKey];
+        if (!isset($b['classes'][$cKey])) {
+            $b['classes'][$cKey] = [
+                'label' => ($r['study_year'] ? year_label((int)$r['study_year']) : 'Year not set')
+                         . ($r['semester'] ? ' · Sem ' . (int)$r['semester'] : ''),
+                'present' => 0, 'total' => 0, 'students' => [],
+            ];
+        }
+        $b['classes'][$cKey]['students'][] = $r;
+        $b['classes'][$cKey]['present'] += $here;
+        $b['classes'][$cKey]['total']++;
+        $b['present'] += $here;
+        $b['total']++;
+        $out['present'] += $here;
+        $out['total']++;
+        unset($b);
+    }
+    return $out;
+}
+
+/** Whole number percentage, 0 when there is nothing to divide by. */
+function attendance_pct(int $present, int $total): int
+{
+    return $total ? (int)round($present / $total * 100) : 0;
+}
+
+/**
  * Days marked present in the current month and the current streak of
  * consecutive days (ending today or yesterday).
  *

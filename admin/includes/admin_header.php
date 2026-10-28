@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Admin layout header. Every admin page (except login) includes this,
  * which also enforces the administrator guard.
@@ -20,6 +20,7 @@ $navItems = [
     'analysis'  => ['faculty_analysis.php','graph-up-arrow',  'Faculty Analysis'],
     'papers'    => ['papers.php',          'journal-text',    'Question Papers'],
     'students'  => ['students.php',        'people',          'Students'],
+    'attendance'=> ['attendance.php',      'calendar2-check', 'Attendance'],
     'results'   => ['results.php',         'bar-chart-line',  'Results'],
     'account'   => ['account.php',         'shield-lock',     'My Account'],
 ];
@@ -44,7 +45,7 @@ $pendingFaculty = (int)$pf->fetchColumn();
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-<link href="<?= url('assets/css/style.css') ?>" rel="stylesheet">
+<link href="<?= asset_url('assets/css/style.css') ?>" rel="stylesheet">
 </head>
 <body>
 

@@ -46,6 +46,10 @@ foreach ($exams as $exam) {
 }
 ?>
 
+<?php $collegeId = (int)$faculty['college_id'];
+      $boardPage = 'faculty/attendance.php';
+      require __DIR__ . '/../includes/attendance_widget.php'; ?>
+
 <div class="row g-3 mb-4">
   <?php foreach ([
     ['journal-text',    'text-primary', 'My Exams',        count($exams)],
