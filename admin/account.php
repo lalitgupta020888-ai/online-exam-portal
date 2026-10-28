@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/../includes/auth.php';
 $admin = require_admin();
+ensure_attendance_schema();      // campus location columns on an older database
 
 $profileErrors  = [];
 $collegeErrors  = [];
@@ -107,6 +108,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    /* ---------------------- Campus location ---------------------- */
+    if (post('action') === 'location' && $college) {
+        $lat = (float)post('lat');
+        $lng = (float)post('lng');
+        $acc = (float)post('accuracy');
+        if (!valid_coordinates($lat, $lng)) {
+            set_flash('danger', 'No location was captured. Press "Fetch my location" first.');
+        } elseif ($acc <= 0 || $acc > ATTENDANCE_MAX_ACCURACY_M) {
+            set_flash('danger', 'The GPS fix was too rough (±' . round($acc) . ' m). Wait for a sharper '
+                              . 'signal - ideally under ' . ATTENDANCE_RADIUS_M . ' m - and save again.');
+        } else {
+            db()->prepare('UPDATE colleges SET latitude = ?, longitude = ?, geo_accuracy = ?,
+                                  geo_updated_at = ? WHERE id = ?')
+                ->execute([$lat, $lng, round($acc, 1), date('Y-m-d H:i:s'), $college['id']]);
+            set_flash('success', 'Campus location saved. Students can now mark attendance within '
+                               . ATTENDANCE_RADIUS_M . ' m of this point.');
+        }
+        redirect('admin/account.php?tab=location');
+    }
+
     /* ---------------------- Password ---------------------- */
     if (post('action') === 'password') {
         $openTab = 'password';
@@ -135,6 +156,17 @@ if ($college) {
     $st->execute(['c1' => $college['id'], 'c2' => $college['id'],
                   'c3' => $college['id'], 'c4' => $college['id']]);
     $counts = $st->fetch();
+}
+
+$todayAttendance = [];
+if ($college) {
+    $st = db()->prepare(
+        'SELECT a.marked_at, a.distance_m, s.name, s.enrollment_no
+           FROM attendance a JOIN students s ON s.id = a.student_id
+          WHERE a.college_id = ? AND a.att_date = ? ORDER BY a.marked_at DESC'
+    );
+    $st->execute([$college['id'], date('Y-m-d')]);
+    $todayAttendance = $st->fetchAll();
 }
 
 $pageTitle = 'My Account';
@@ -207,6 +239,9 @@ require_once __DIR__ . '/includes/admin_header.php';
   <li><button class="nav-pill <?= $openTab === 'college' ? 'active' : '' ?>"
               data-bs-toggle="tab" data-bs-target="#tabCollege" type="button">
     <i class="bi bi-bank me-1"></i>College profile</button></li>
+  <li><button class="nav-pill <?= $openTab === 'location' ? 'active' : '' ?>"
+              data-bs-toggle="tab" data-bs-target="#tabLocation" type="button">
+    <i class="bi bi-geo-alt me-1"></i>Campus location</button></li>
   <li><button class="nav-pill <?= $openTab === 'password' ? 'active' : '' ?>"
               data-bs-toggle="tab" data-bs-target="#tabPassword" type="button">
     <i class="bi bi-shield-lock me-1"></i>Change password</button></li>
@@ -412,6 +447,144 @@ require_once __DIR__ . '/includes/admin_header.php';
           </div>
         </div>
       </form>
+    <?php endif; ?>
+  </div>
+
+  <!-- ======================= Campus location ======================= -->
+  <div class="tab-pane fade <?= $openTab === 'location' ? 'show active' : '' ?>" id="tabLocation">
+    <?php if (!$college): ?>
+      <div class="alert alert-warning">This administrator account is not linked to a college yet.</div>
+    <?php else: $hasGeo = college_has_location($college); ?>
+      <div class="row g-4">
+        <div class="col-lg-7">
+          <form method="post" class="card border-0" id="geoForm">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="location">
+            <input type="hidden" name="lat" id="geoLat">
+            <input type="hidden" name="lng" id="geoLng">
+            <input type="hidden" name="accuracy" id="geoAcc">
+            <div class="card-body p-4">
+              <div class="form-section-head">
+                <span class="form-section-num"><i class="bi bi-crosshair"></i></span>
+                <div>
+                  <h5 class="mb-0">Campus attendance point</h5>
+                  <span class="small text-muted-2">
+                    Stand at the centre of your campus (e.g. the main block) and fetch the location.
+                    Students can mark attendance only within <?= ATTENDANCE_RADIUS_M ?> m of it.
+                  </span>
+                </div>
+              </div>
+
+              <div class="geo-stage" id="geoStage" data-state="<?= $hasGeo ? 'locked' : 'idle' ?>">
+                <div class="geo-radar">
+                  <span class="geo-ring r1"></span><span class="geo-ring r2"></span>
+                  <span class="geo-ring r3"></span><span class="geo-sweep"></span>
+                  <span class="geo-pin"><i class="bi bi-geo-alt-fill"></i></span>
+                </div>
+                <div class="geo-readout">
+                  <div class="geo-status" id="geoStatus">
+                    <?= $hasGeo ? 'Campus point is set' : 'No campus point saved yet' ?>
+                  </div>
+                  <div class="geo-coords">
+                    <div><span>Latitude</span><strong id="geoLatOut"><?= $hasGeo ? e(number_format((float)$college['latitude'], 6)) : '—' ?></strong></div>
+                    <div><span>Longitude</span><strong id="geoLngOut"><?= $hasGeo ? e(number_format((float)$college['longitude'], 6)) : '—' ?></strong></div>
+                    <div><span>Accuracy</span><strong id="geoAccOut"><?= $hasGeo ? '±' . e(num((float)$college['geo_accuracy'])) . ' m' : '—' ?></strong></div>
+                  </div>
+                  <?php if ($hasGeo): ?>
+                    <div class="small text-muted-2 mt-2">
+                      Updated <?= e(format_datetime($college['geo_updated_at'])) ?> ·
+                      <a href="https://www.google.com/maps?q=<?= e($college['latitude'] . ',' . $college['longitude']) ?>"
+                         target="_blank" rel="noopener">View on map <i class="bi bi-box-arrow-up-right"></i></a>
+                    </div>
+                  <?php endif; ?>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap gap-2 mt-4">
+                <button type="button" class="btn btn-outline-primary" id="geoFetch">
+                  <i class="bi bi-broadcast me-1"></i>Fetch my location
+                </button>
+                <button class="btn btn-primary" id="geoSave" disabled>
+                  <i class="bi bi-check2 me-1"></i><?= $hasGeo ? 'Update' : 'Save' ?> campus point
+                </button>
+              </div>
+              <div class="form-text mt-2">
+                Keep the page open for a few seconds - the reading sharpens as the GPS settles.
+                A phone used in the open gives the best fix.
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="card border-0 h-100">
+            <div class="card-body p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0"><i class="bi bi-calendar-check me-1"></i>Present today</h6>
+                <span class="chip chip-soft"><?= count($todayAttendance) ?> students</span>
+              </div>
+              <?php if (!$todayAttendance): ?>
+                <p class="small text-muted-2 mb-0">No student has marked attendance today yet.</p>
+              <?php else: ?>
+                <ul class="info-list">
+                  <?php foreach ($todayAttendance as $r): ?>
+                    <li>
+                      <span><?= e($r['name']) ?>
+                        <?php if ($r['enrollment_no']): ?>
+                          <small class="text-muted-2">· <?= e($r['enrollment_no']) ?></small>
+                        <?php endif; ?></span>
+                      <strong><?= e(date('h:i A', strtotime($r['marked_at']))) ?>
+                        <small class="text-muted-2 fw-normal">· <?= e(num((float)$r['distance_m'])) ?> m</small></strong>
+                    </li>
+                  <?php endforeach; ?>
+                </ul>
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+      (function () {
+        var fetchBtn = document.getElementById('geoFetch'), saveBtn = document.getElementById('geoSave'),
+            stage = document.getElementById('geoStage'), status = document.getElementById('geoStatus'),
+            best = null, watch = null, timer = null;
+        function $(id) { return document.getElementById(id); }
+        function stop() {
+          if (watch !== null) navigator.geolocation.clearWatch(watch);
+          watch = null; clearTimeout(timer);
+        }
+        fetchBtn.addEventListener('click', function () {
+          if (!navigator.geolocation || !window.isSecureContext) {
+            stage.dataset.state = 'error';
+            status.textContent = 'Location needs a secure (https) page in a modern browser.';
+            return;
+          }
+          stop(); best = null; stage.dataset.state = 'scanning';
+          status.textContent = 'Locking on to GPS satellites…';
+          watch = navigator.geolocation.watchPosition(function (p) {
+            // Keep the sharpest reading seen so far.
+            if (best && p.coords.accuracy >= best.accuracy) return;
+            best = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy };
+            $('geoLat').value = best.lat; $('geoLng').value = best.lng; $('geoAcc').value = best.acc;
+            $('geoLatOut').textContent = best.lat.toFixed(6);
+            $('geoLngOut').textContent = best.lng.toFixed(6);
+            $('geoAccOut').textContent = '±' + Math.round(best.acc) + ' m';
+            saveBtn.disabled = best.acc > <?= ATTENDANCE_MAX_ACCURACY_M ?>;
+            status.textContent = best.acc <= <?= ATTENDANCE_RADIUS_M ?>
+              ? 'Precise fix acquired - ready to save' : 'Refining the fix… ±' + Math.round(best.acc) + ' m';
+            if (best.acc <= 8) { stop(); stage.dataset.state = 'locked'; }
+          }, function (err) {
+            stop(); stage.dataset.state = 'error';
+            status.textContent = err.code === 1
+              ? 'Location permission was denied. Allow it in the browser and try again.'
+              : 'Could not read the location. Please try again.';
+          }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+          timer = setTimeout(function () { stop(); if (best) stage.dataset.state = 'locked'; }, 25000);
+        });
+        $('geoForm').addEventListener('submit', stop);
+      })();
+      </script>
     <?php endif; ?>
   </div>
 

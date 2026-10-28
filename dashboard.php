@@ -7,6 +7,7 @@
  */
 require_once __DIR__ . '/includes/auth.php';
 
+ensure_attendance_schema();      // aadhaar_no column on an older database
 $student = require_student();
 
 // Any abandoned attempt whose time is over gets graded before we draw the page.
@@ -37,6 +38,24 @@ foreach ($prev->fetchAll() as $r) {
     $history[$r['exam_id']] = $r;
 }
 
+// Campus attendance
+$attCollege  = get_college((int)$student['college_id']);
+$attToday    = attendance_today((int)$student['id']);
+$attSummary  = attendance_summary((int)$student['id']);
+$hasAadhaar  = !empty($student['aadhaar_no']);
+$campusReady = college_has_location($attCollege);
+$attState    = $attToday ? 'done' : (!$hasAadhaar ? 'aadhaar' : (!$campusReady ? 'campus' : 'ready'));
+
+// Monday-to-Sunday strip for this week.
+$weekStart = strtotime('monday this week');
+$week = [];
+for ($i = 0; $i < 7; $i++) {
+    $d = date('Y-m-d', strtotime("+$i day", $weekStart));
+    $week[] = ['label' => date('D', strtotime($d)), 'date' => $d,
+               'present' => isset($attSummary['days'][$d]),
+               'today' => $d === date('Y-m-d'), 'future' => $d > date('Y-m-d')];
+}
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -60,6 +79,75 @@ require_once __DIR__ . '/includes/header.php';
       <i class="bi bi-bar-chart me-1"></i>My Results
     </a>
   </div>
+
+  <!-- ------------------------ Campus attendance ------------------------ -->
+  <section class="att-card mb-4" id="attCard" data-state="<?= e($attState) ?>">
+    <div class="att-glow"></div>
+    <div class="att-body">
+      <div class="att-info">
+        <span class="att-eyebrow"><i class="bi bi-geo-alt-fill"></i>Campus Attendance ·
+          <?= e(date('l, d M Y')) ?></span>
+        <h3 class="att-title" id="attTitle">
+          <?php if ($attState === 'done'): ?>You're marked present today
+          <?php elseif ($attState === 'aadhaar'): ?>Verify your Aadhaar to begin
+          <?php elseif ($attState === 'campus'): ?>Campus point not set yet
+          <?php else: ?>Ready when you are on campus<?php endif; ?>
+        </h3>
+        <p class="att-sub" id="attMsg">
+          <?php if ($attState === 'done'): ?>
+            Checked in at <strong><?= e(date('h:i A', strtotime($attToday['marked_at']))) ?></strong>,
+            <?= e(num((float)$attToday['distance_m'])) ?> m from the campus point.
+          <?php elseif ($attState === 'aadhaar'): ?>
+            Attendance is linked to your identity. Add your Aadhaar number once in My Account.
+          <?php elseif ($attState === 'campus'): ?>
+            Your college administrator has not saved the campus location. Attendance opens as soon as they do.
+          <?php else: ?>
+            Step inside the campus - you must be within <?= ATTENDANCE_RADIUS_M ?> m of the
+            attendance point. Allow location access when your browser asks.
+          <?php endif; ?>
+        </p>
+
+        <div class="att-week">
+          <?php foreach ($week as $w): ?>
+            <div class="att-day <?= $w['present'] ? 'present' : '' ?> <?= $w['today'] ? 'today' : '' ?> <?= $w['future'] ? 'future' : '' ?>"
+                 <?= $w['today'] ? 'id="attTodayDot"' : '' ?> title="<?= e(date('d M', strtotime($w['date']))) ?>">
+              <span class="att-dot"><i class="bi bi-check-lg"></i></span>
+              <small><?= e($w['label']) ?></small>
+            </div>
+          <?php endforeach; ?>
+        </div>
+
+        <div class="att-stats">
+          <div><strong id="attMonth"><?= (int)$attSummary['month'] ?></strong><span>days this month</span></div>
+          <div><strong id="attStreak"><?= (int)$attSummary['streak'] ?></strong><span>day streak <i class="bi bi-fire"></i></span></div>
+        </div>
+      </div>
+
+      <div class="att-action">
+        <div class="att-radar" aria-hidden="true">
+          <span class="ring r1"></span><span class="ring r2"></span><span class="ring r3"></span>
+          <span class="sweep"></span>
+          <span class="core"><i class="bi <?= $attState === 'done' ? 'bi-check-lg' : 'bi-fingerprint' ?>" id="attIcon"></i></span>
+        </div>
+        <?php if ($attState === 'aadhaar'): ?>
+          <a href="<?= url('profile.php#aadhaar') ?>" class="btn btn-gold att-btn">
+            <i class="bi bi-person-vcard me-1"></i>Add Aadhaar
+          </a>
+        <?php elseif ($attState === 'ready'): ?>
+          <button type="button" class="btn btn-gold att-btn" id="attBtn">
+            <i class="bi bi-geo-alt me-1"></i>Mark Attendance
+          </button>
+        <?php elseif ($attState === 'done'): ?>
+          <span class="att-badge"><i class="bi bi-patch-check-fill me-1"></i>Present</span>
+        <?php else: ?>
+          <button type="button" class="btn btn-light att-btn" disabled>
+            <i class="bi bi-hourglass me-1"></i>Awaiting campus setup
+          </button>
+        <?php endif; ?>
+        <div class="att-live" id="attLive"></div>
+      </div>
+    </div>
+  </section>
 
   <?php if ($inProgress): ?>
     <div class="alert alert-warning d-flex align-items-center">
@@ -184,5 +272,85 @@ require_once __DIR__ . '/includes/header.php';
     </section>
   <?php endforeach; ?>
 </div>
+
+<?php if ($attState === 'ready'): ?>
+<script>
+(function () {
+  var card = document.getElementById('attCard'), btn = document.getElementById('attBtn'),
+      title = document.getElementById('attTitle'), msg = document.getElementById('attMsg'),
+      live = document.getElementById('attLive'), icon = document.getElementById('attIcon'),
+      RADIUS = <?= ATTENDANCE_RADIUS_M ?>, busy = false;
+
+  function setState(state, head, text, ic) {
+    card.dataset.state = state;
+    if (head) title.textContent = head;
+    if (text) msg.innerHTML = text;
+    if (ic) icon.className = 'bi ' + ic;
+  }
+  function fail(head, text) {
+    busy = false; btn.disabled = false; live.textContent = '';
+    btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Try Again';
+    setState('error', head, text, 'bi-x-lg');
+  }
+
+  // Watch the GPS for a few seconds and send the sharpest fix we get.
+  function locate(done) {
+    var best = null, id, timer;
+    function finish() { navigator.geolocation.clearWatch(id); clearTimeout(timer); done(best); }
+    id = navigator.geolocation.watchPosition(function (p) {
+      if (!best || p.coords.accuracy < best.accuracy) best = p.coords;
+      live.textContent = 'GPS accuracy ±' + Math.round(best.accuracy) + ' m';
+      if (best.accuracy <= 10) finish();
+    }, function (err) {
+      navigator.geolocation.clearWatch(id); clearTimeout(timer);
+      if (best) return done(best);
+      fail('Location unavailable', err.code === 1
+        ? 'Location permission was denied. Allow location for this site in your browser settings and try again.'
+        : 'We could not read your location. Turn on GPS / location services and try again.');
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+    timer = setTimeout(finish, 12000);
+  }
+
+  btn.addEventListener('click', function () {
+    if (busy) return;
+    if (!navigator.geolocation || !window.isSecureContext) {
+      return fail('Location not supported', 'Open the portal over https in an up to date browser to mark attendance.');
+    }
+    busy = true; btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Scanning…';
+    setState('scanning', 'Verifying your location…', 'Hold steady - locking on to GPS satellites.', 'bi-broadcast');
+
+    locate(function (c) {
+      if (!c) return;
+      var body = new FormData();
+      body.append('csrf_token', <?= json_encode(csrf_token()) ?>);
+      body.append('lat', c.latitude); body.append('lng', c.longitude); body.append('accuracy', c.accuracy);
+      fetch(<?= json_encode(url('api/mark_attendance.php')) ?>, { method: 'POST', body: body, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) {
+            var head = d.code === 'outside' ? 'You are outside the campus zone'
+                     : d.code === 'accuracy' ? 'GPS signal too weak' : 'Attendance not marked';
+            return fail(head, d.error);
+          }
+          busy = false; live.textContent = '';
+          setState('done', 'You\'re marked present today',
+            'Checked in at <strong>' + d.time + '</strong>, ' + Math.round(d.distance) + ' m from the campus point.',
+            'bi-check-lg');
+          btn.outerHTML = '<span class="att-badge"><i class="bi bi-patch-check-fill me-1"></i>Present</span>';
+          var dot = document.getElementById('attTodayDot');
+          if (dot && !dot.classList.contains('present')) {
+            dot.classList.add('present');
+            ['attMonth', 'attStreak'].forEach(function (k) {
+              var el = document.getElementById(k); el.textContent = (+el.textContent) + 1;
+            });
+          }
+        })
+        .catch(function () { fail('Connection problem', 'We could not reach the server. Check your internet and try again.'); });
+    });
+  });
+})();
+</script>
+<?php endif; ?>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

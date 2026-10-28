@@ -1358,3 +1358,151 @@ h2 { font-weight: 800; letter-spacing: -.028em; }
     display: block; padding: 2rem; font-size: 1.25rem;
   }
 }
+
+/* ------------------------- Campus attendance ------------------------ */
+.att-card {
+  position: relative; overflow: hidden; border-radius: var(--oep-radius-lg);
+  background: var(--oep-grad-ink); color: #e8ebf7; box-shadow: var(--oep-shadow-lg);
+}
+.att-glow {
+  position: absolute; top: -40%; right: -10%; width: 520px; height: 520px; pointer-events: none;
+  background: radial-gradient(circle, rgba(124, 123, 245, .35), transparent 65%);
+}
+.att-card[data-state="done"] .att-glow { background: radial-gradient(circle, rgba(22, 163, 74, .35), transparent 65%); }
+.att-card[data-state="error"] .att-glow { background: radial-gradient(circle, rgba(220, 38, 38, .30), transparent 65%); }
+.att-body {
+  position: relative; display: flex; flex-wrap: wrap; gap: 2rem;
+  align-items: center; justify-content: space-between; padding: 2rem 2.25rem;
+}
+.att-info { flex: 1 1 340px; min-width: 0; }
+.att-eyebrow {
+  display: inline-flex; gap: .4rem; align-items: center; font-size: .72rem; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--oep-gold);
+}
+.att-title { color: #fff; font-weight: 700; margin: .5rem 0 .35rem; }
+.att-sub { color: #aab2d0; max-width: 34rem; margin-bottom: 1.25rem; }
+.att-sub strong { color: #fff; }
+
+.att-week { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.att-day { display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+.att-day small { font-size: .68rem; color: #8790b3; text-transform: uppercase; letter-spacing: .06em; }
+.att-dot {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  border: 1.5px dashed rgba(255, 255, 255, .18); color: transparent; transition: all .4s var(--oep-ease-out);
+}
+.att-day.future .att-dot { opacity: .4; }
+.att-day.today .att-dot { border: 1.5px solid var(--oep-gold); }
+.att-day.today small { color: var(--oep-gold); }
+.att-day.present .att-dot {
+  border: 0; color: #fff; background: linear-gradient(135deg, #16a34a, #22c55e);
+  box-shadow: 0 6px 16px -6px rgba(34, 197, 94, .8);
+}
+.att-stats { display: flex; gap: 2rem; }
+.att-stats strong { display: block; font-size: 1.5rem; color: #fff; line-height: 1.1; }
+.att-stats span { font-size: .78rem; color: #8790b3; }
+.att-stats .bi-fire { color: #fb923c; }
+
+.att-action { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 1rem; margin: 0 auto; }
+.att-btn { min-width: 210px; padding: .7rem 1.4rem; font-weight: 600; border-radius: 999px; }
+.att-badge {
+  display: inline-flex; align-items: center; padding: .55rem 1.3rem; border-radius: 999px; font-weight: 600;
+  color: #bbf7d0; background: rgba(22, 163, 74, .18); border: 1px solid rgba(34, 197, 94, .4);
+}
+.att-live { min-height: 1.2em; font-size: .78rem; color: #8790b3; }
+
+/* Radar */
+.att-radar { position: relative; width: 168px; height: 168px; display: grid; place-items: center; }
+.att-radar .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(200, 164, 92, .28); }
+.att-radar .r1 { inset: 0; }
+.att-radar .r2 { inset: 24px; }
+.att-radar .r3 { inset: 48px; }
+.att-radar .sweep {
+  position: absolute; inset: 0; border-radius: 50%; opacity: 0;
+  background: conic-gradient(from 0deg, rgba(200, 164, 92, .45), transparent 28%);
+}
+.att-radar .core {
+  position: relative; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 1.7rem; color: #2b2412; background: var(--oep-grad-gold);
+  box-shadow: 0 0 0 8px rgba(200, 164, 92, .12), 0 12px 30px -8px rgba(200, 164, 92, .8);
+  transition: all .5s var(--oep-ease-out);
+}
+.att-card[data-state="ready"] .att-radar .ring { animation: attPulse 2.8s var(--oep-ease) infinite; }
+.att-card[data-state="ready"] .att-radar .r2 { animation-delay: .4s; }
+.att-card[data-state="ready"] .att-radar .r3 { animation-delay: .8s; }
+.att-card[data-state="scanning"] .att-radar .sweep { opacity: 1; animation: attSpin 1.6s linear infinite; }
+.att-card[data-state="scanning"] .att-radar .ring { border-color: rgba(200, 164, 92, .5); }
+.att-card[data-state="done"] .att-radar .ring { border-color: rgba(34, 197, 94, .35); }
+.att-card[data-state="done"] .att-radar .core {
+  color: #fff; background: linear-gradient(135deg, #16a34a, #22c55e); animation: attPop .6s var(--oep-ease-out);
+  box-shadow: 0 0 0 10px rgba(34, 197, 94, .14), 0 12px 30px -8px rgba(34, 197, 94, .9);
+}
+.att-card[data-state="error"] .att-radar .core {
+  color: #fff; background: linear-gradient(135deg, #dc2626, #f87171); animation: attShake .45s;
+  box-shadow: 0 0 0 10px rgba(220, 38, 38, .14);
+}
+.att-card[data-state="aadhaar"] .att-radar,
+.att-card[data-state="campus"] .att-radar { opacity: .55; }
+
+@keyframes attSpin { to { transform: rotate(360deg); } }
+@keyframes attPulse { 0%, 100% { opacity: .35; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.02); } }
+@keyframes attPop { 0% { transform: scale(.6); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+@keyframes attShake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+@media (max-width: 575.98px) {
+  .att-body { padding: 1.5rem 1.25rem; }
+  .att-dot { width: 30px; height: 30px; }
+  .att-week { gap: .4rem; }
+}
+
+/* Aadhaar card on the student profile */
+.aadhaar-card { color: #e8ebf7; background: var(--oep-grad-ink); overflow: hidden; position: relative; }
+.aadhaar-card::after {
+  content: ""; position: absolute; right: -60px; bottom: -60px; width: 200px; height: 200px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(200, 164, 92, .28), transparent 70%); pointer-events: none;
+}
+.aadhaar-card .card-body { position: relative; z-index: 1; }
+.aadhaar-emblem {
+  width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 1.4rem;
+  color: #2b2412; background: var(--oep-grad-gold);
+}
+.aadhaar-label { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--oep-gold); }
+.aadhaar-number {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1.45rem;
+  letter-spacing: .14em; color: #fff; margin: .35rem 0 .5rem;
+}
+.aadhaar-note { color: #aab2d0; }
+.aadhaar-input {
+  margin-top: .5rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.2rem; letter-spacing: .14em; text-align: center;
+}
+.aadhaar-card .invalid-feedback { color: #fca5a5; }
+
+/* Admin - campus location */
+.geo-stage {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 1.75rem; padding: 1.5rem;
+  border-radius: var(--oep-radius); background: var(--oep-grad-ink); color: #e8ebf7;
+}
+.geo-radar { position: relative; width: 130px; height: 130px; flex: 0 0 auto; display: grid; place-items: center; }
+.geo-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(124, 123, 245, .35); }
+.geo-ring.r1 { inset: 0; }
+.geo-ring.r2 { inset: 20px; }
+.geo-ring.r3 { inset: 40px; }
+.geo-sweep {
+  position: absolute; inset: 0; border-radius: 50%; opacity: 0;
+  background: conic-gradient(from 0deg, rgba(124, 123, 245, .55), transparent 30%);
+}
+.geo-pin { font-size: 2rem; color: var(--oep-gold); filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .4)); transition: color .4s; }
+.geo-stage[data-state="scanning"] .geo-sweep { opacity: 1; animation: attSpin 1.6s linear infinite; }
+.geo-stage[data-state="locked"] .geo-pin { color: #22c55e; animation: attPop .6s var(--oep-ease-out); }
+.geo-stage[data-state="error"] .geo-pin { color: #f87171; }
+.geo-readout { flex: 1 1 220px; min-width: 0; }
+.geo-status { font-weight: 600; color: #fff; margin-bottom: .75rem; }
+.geo-coords { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+.geo-coords span { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: #8790b3; }
+.geo-coords strong { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92rem; color: #fff; }
+.geo-stage .text-muted-2 { color: #8790b3 !important; }
+.geo-stage a { color: var(--oep-gold); }
+
+@media (prefers-reduced-motion: reduce) {
+  .att-radar *, .geo-radar * { animation: none !important; }
+}

@@ -1,12 +1,14 @@
-﻿<?php
+<?php
 /**
  * Student - my account: edit personal details and change the password.
  */
 require_once __DIR__ . '/includes/auth.php';
 
+ensure_attendance_schema();      // aadhaar_no column on an older database
 $student = require_student();
 
 $profileErrors  = [];
+$aadhaarError   = '';
 $passwordErrors = [];
 $openTab = $_GET['tab'] ?? 'profile';
 
@@ -22,6 +24,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_flash($error === '' ? 'success' : 'danger',
                   $error === '' ? ($remove ? 'Your photo has been removed.' : 'Your photo has been updated.') : $error);
         redirect('profile.php');
+    }
+
+    /* ------------------------- Aadhaar number ------------------------- */
+    if (post('action') === 'aadhaar') {
+        $aadhaar = preg_replace('/\D/', '', post('aadhaar_no'));
+        if (!valid_aadhaar($aadhaar)) {
+            $aadhaarError = 'That is not a valid 12 digit Aadhaar number. Please check it.';
+        } else {
+            $st = db()->prepare('SELECT id FROM students WHERE aadhaar_no = ? AND id <> ?');
+            $st->execute([$aadhaar, $student['id']]);
+            if ($st->fetch()) {
+                $aadhaarError = 'This Aadhaar number is already linked to another account.';
+            }
+        }
+        if ($aadhaarError === '') {
+            db()->prepare('UPDATE students SET aadhaar_no = ? WHERE id = ?')
+                ->execute([$aadhaar, $student['id']]);
+            set_flash('success', 'Aadhaar verified and saved. You can now mark your attendance.');
+            redirect('profile.php');
+        }
     }
 
     /* ------------------------- Update profile ------------------------- */
@@ -346,8 +368,45 @@ require_once __DIR__ . '/includes/header.php';
           </form>
         </div>
 
-        <div class="col-lg-5">
-          <div class="card border-0 h-100">
+        <div class="col-lg-5 d-flex flex-column gap-4">
+          <?php $aadhaarSaved = !empty($student['aadhaar_no']); ?>
+          <form method="post" novalidate id="aadhaar"
+                class="card border-0 aadhaar-card <?= $aadhaarSaved ? 'is-verified' : '' ?>">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="aadhaar">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="aadhaar-emblem"><i class="bi bi-fingerprint"></i></div>
+                <?php if ($aadhaarSaved): ?>
+                  <span class="chip chip-success"><i class="bi bi-patch-check-fill"></i>Verified</span>
+                <?php else: ?>
+                  <span class="chip chip-warning"><i class="bi bi-exclamation-circle"></i>Required for attendance</span>
+                <?php endif; ?>
+              </div>
+              <div class="aadhaar-label">Aadhaar Number</div>
+              <?php if ($aadhaarSaved && $aadhaarError === ''): ?>
+                <div class="aadhaar-number"><?= e(mask_aadhaar($student['aadhaar_no'])) ?></div>
+                <p class="small aadhaar-note mb-3">
+                  Linked to your identity for campus attendance. Only the last four digits are ever shown.
+                </p>
+                <button type="button" class="btn btn-sm btn-light"
+                        onclick="this.hidden=true;document.getElementById('aadhaarEdit').hidden=false">
+                  <i class="bi bi-pencil me-1"></i>Change number
+                </button>
+              <?php endif; ?>
+              <div id="aadhaarEdit" <?= $aadhaarSaved && $aadhaarError === '' ? 'hidden' : '' ?>>
+                <input type="text" name="aadhaar_no" inputmode="numeric" autocomplete="off"
+                       maxlength="14" placeholder="1234 5678 9012" data-aadhaar-input
+                       class="form-control aadhaar-input <?= $aadhaarError ? 'is-invalid' : '' ?>">
+                <div class="invalid-feedback d-block"><?= e($aadhaarError) ?></div>
+                <button class="btn btn-gold w-100 mt-3">
+                  <i class="bi bi-shield-check me-1"></i>Verify &amp; Save
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <div class="card border-0 flex-grow-1">
             <div class="card-body p-4">
               <h6 class="mb-3"><i class="bi bi-clipboard-data me-1"></i>My exam record</h6>
               <ul class="info-list">

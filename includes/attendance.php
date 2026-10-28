@@ -1,0 +1,156 @@
+<?php
+/**
+ * Geo-fenced attendance.
+ *
+ * The college administrator stands inside the campus and saves its GPS
+ * coordinates once. A student who has saved an Aadhaar number may then mark
+ * attendance from the dashboard - once a day, and only from within
+ * ATTENDANCE_RADIUS_M metres of that point. The distance is always worked out
+ * on the server; the browser only reports where it is.
+ */
+
+define('ATTENDANCE_RADIUS_M', 15);
+// A fix vaguer than this cannot prove the student is inside a 15 m circle.
+define('ATTENDANCE_MAX_ACCURACY_M', 50);
+
+/**
+ * Add the location / Aadhaar columns and the attendance table on a site that
+ * has not re-run upgrade.php. Runs the checks at most once per request.
+ */
+function ensure_attendance_schema(): void
+{
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $columns = [
+        ['colleges', 'latitude',        'DECIMAL(10,7) DEFAULT NULL'],
+        ['colleges', 'longitude',       'DECIMAL(10,7) DEFAULT NULL'],
+        ['colleges', 'geo_accuracy',    'DECIMAL(7,1) DEFAULT NULL'],
+        ['colleges', 'geo_updated_at',  'DATETIME DEFAULT NULL'],
+        ['students', 'aadhaar_no',      'CHAR(12) DEFAULT NULL'],
+    ];
+    $st = db()->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS
+                          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+    foreach ($columns as [$table, $column, $type]) {
+        $st->execute([$table, $column]);
+        if (!(int)$st->fetchColumn()) {
+            db()->exec("ALTER TABLE `$table` ADD COLUMN `$column` $type");
+        }
+    }
+
+    db()->exec('CREATE TABLE IF NOT EXISTS `attendance` (
+        `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        `student_id` INT UNSIGNED NOT NULL,
+        `college_id` INT UNSIGNED NOT NULL,
+        `att_date`   DATE NOT NULL,
+        `marked_at`  DATETIME NOT NULL,
+        `latitude`   DECIMAL(10,7) NOT NULL,
+        `longitude`  DECIMAL(10,7) NOT NULL,
+        `accuracy`   DECIMAL(7,1) DEFAULT NULL,
+        `distance_m` DECIMAL(7,1) NOT NULL,
+        `ip`         VARCHAR(45) DEFAULT NULL,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `uq_attendance_day` (`student_id`, `att_date`),
+        KEY `idx_attendance_college` (`college_id`, `att_date`),
+        CONSTRAINT `fk_attendance_student` FOREIGN KEY (`student_id`)
+          REFERENCES `students` (`id`) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+    $done = true;
+}
+
+/** Great-circle distance in metres between two points (haversine). */
+function geo_distance_m(float $lat1, float $lng1, float $lat2, float $lng2): float
+{
+    $r    = 6371000.0;
+    $dLat = deg2rad($lat2 - $lat1);
+    $dLng = deg2rad($lng2 - $lng1);
+    $a    = sin($dLat / 2) ** 2
+          + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+    return 2 * $r * asin(min(1.0, sqrt($a)));
+}
+
+/** True when lat / lng are real coordinates (and not the 0,0 "no fix" point). */
+function valid_coordinates(float $lat, float $lng): bool
+{
+    return $lat >= -90 && $lat <= 90 && $lng >= -180 && $lng <= 180
+        && !($lat == 0.0 && $lng == 0.0);
+}
+
+/** Does the college have a saved campus location? */
+function college_has_location(?array $college): bool
+{
+    return $college && $college['latitude'] !== null && $college['longitude'] !== null;
+}
+
+/**
+ * Aadhaar numbers are 12 digits, never start with 0 or 1, and end in a
+ * Verhoeff check digit - so most typing mistakes are caught here.
+ */
+function valid_aadhaar(string $number): bool
+{
+    if (!preg_match('/^[2-9][0-9]{11}$/', $number)) {
+        return false;
+    }
+    static $d = [
+        [0,1,2,3,4,5,6,7,8,9], [1,2,3,4,0,6,7,8,9,5], [2,3,4,0,1,7,8,9,5,6],
+        [3,4,0,1,2,8,9,5,6,7], [4,0,1,2,3,9,5,6,7,8], [5,9,8,7,6,0,4,3,2,1],
+        [6,5,9,8,7,1,0,4,3,2], [7,6,5,9,8,2,1,0,4,3], [8,7,6,5,9,3,2,1,0,4],
+        [9,8,7,6,5,4,3,2,1,0],
+    ];
+    static $p = [
+        [0,1,2,3,4,5,6,7,8,9], [1,5,7,6,2,8,3,0,9,4], [5,8,0,3,7,9,6,1,4,2],
+        [8,9,1,6,0,4,3,5,2,7], [9,4,5,3,1,2,6,8,7,0], [4,2,8,6,5,7,3,9,0,1],
+        [2,7,9,3,8,0,6,4,1,5], [7,0,4,6,9,1,3,2,5,8],
+    ];
+    $c = 0;
+    foreach (array_reverse(str_split($number)) as $i => $digit) {
+        $c = $d[$c][$p[$i % 8][(int)$digit]];
+    }
+    return $c === 0;
+}
+
+/** "XXXX XXXX 1234" - the full number is never shown back on screen. */
+function mask_aadhaar(?string $number): string
+{
+    return $number ? 'XXXX XXXX ' . substr($number, -4) : '';
+}
+
+/** Today's attendance row for a student, or null. */
+function attendance_today(int $studentId): ?array
+{
+    ensure_attendance_schema();
+    $st = db()->prepare('SELECT * FROM attendance WHERE student_id = ? AND att_date = ?');
+    $st->execute([$studentId, date('Y-m-d')]);
+    return $st->fetch() ?: null;
+}
+
+/**
+ * Days marked present in the current month and the current streak of
+ * consecutive days (ending today or yesterday).
+ *
+ * @return array{month:int, streak:int, days:array<string,bool>}
+ */
+function attendance_summary(int $studentId): array
+{
+    ensure_attendance_schema();
+    $st = db()->prepare('SELECT att_date FROM attendance
+                          WHERE student_id = ? AND att_date >= ? ORDER BY att_date DESC');
+    $st->execute([$studentId, date('Y-m-d', strtotime('-60 days'))]);
+    $days = array_fill_keys($st->fetchAll(PDO::FETCH_COLUMN), true);
+
+    $month = 0;
+    foreach (array_keys($days) as $d) {
+        if (substr($d, 0, 7) === date('Y-m')) {
+            $month++;
+        }
+    }
+
+    $streak = 0;
+    $cursor = isset($days[date('Y-m-d')]) ? time() : strtotime('-1 day');
+    while (isset($days[date('Y-m-d', $cursor)])) {
+        $streak++;
+        $cursor = strtotime('-1 day', $cursor);
+    }
+    return ['month' => $month, 'streak' => $streak, 'days' => $days];
+}

@@ -157,6 +157,14 @@
     }, 6000);
   });
 
+  /* ------------- Aadhaar input: digits only, grouped 4-4-4 ---------- */
+  document.querySelectorAll('[data-aadhaar-input]').forEach(function (input) {
+    input.addEventListener('input', function () {
+      var digits = input.value.replace(/\D/g, '').slice(0, 12);
+      input.value = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+    });
+  });
+
   /* --------------- Live client side search for admin tables --------- */
   var searchBox = document.getElementById('tableSearch');
   if (searchBox) {
