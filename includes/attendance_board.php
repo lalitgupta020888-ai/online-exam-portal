@@ -2,7 +2,8 @@
 /**
  * Attendance board shared by admin/attendance.php and faculty/attendance.php.
  *
- * Expects $collegeId (int) and $boardPage ('admin/attendance.php' ...).
+ * Expects $collegeId (int), $boardPage ('admin/attendance.php' ...) and
+ * $attFaculty: the faculty row to limit the register to, or null for the admin.
  * Reads the date and the branch / year / semester filters from the query string.
  */
 
@@ -17,9 +18,15 @@ $filters = [
 ];
 $show = in_array($_GET['show'] ?? '', ['present', 'absent'], true) ? $_GET['show'] : 'all';
 
-$register  = attendance_register($collegeId, $date, $filters);
+$register  = attendance_register($collegeId, $date, $filters, $attFaculty);
 $board     = attendance_breakdown($register);
 $branches  = get_branches($collegeId);
+if ($attFaculty !== null) {
+    // Offer only the branches this faculty member actually has students in.
+    $mine = array_column(attendance_register($collegeId, $date, [], $attFaculty), 'branch_id');
+    $branches = array_values(array_filter($branches,
+        static fn($b) => in_array((int)$b['id'], array_map('intval', $mine), true)));
+}
 $pctAll    = attendance_pct($board['present'], $board['total']);
 $isToday   = $date === date('Y-m-d');
 $prevDay   = date('Y-m-d', strtotime($date . ' -1 day'));

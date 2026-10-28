@@ -74,7 +74,7 @@ $st->execute([$collegeId]);
 $recent = $st->fetchAll();
 ?>
 
-<?php $boardPage = 'admin/attendance.php'; require __DIR__ . '/../includes/attendance_widget.php'; ?>
+<?php $boardPage = 'admin/attendance.php'; $attFaculty = null; require __DIR__ . '/../includes/attendance_widget.php'; ?>
 
 <?php if ($college): ?>
   <div class="card border-0 mb-4">

@@ -1,16 +1,18 @@
 <?php
 /**
  * "Today's attendance" card for the admin and faculty dashboards.
- * Expects $collegeId (int) and $boardPage (link target of the full register).
+ * Expects $collegeId (int), $boardPage (link target of the full register) and
+ * $attFaculty (faculty row to limit it to, or null for the admin).
  */
-$attBoard = attendance_breakdown(attendance_register($collegeId, date('Y-m-d')));
+$attRows  = attendance_register($collegeId, date('Y-m-d'), [], $attFaculty);
+$attBoard = attendance_breakdown($attRows);
 $attPct   = attendance_pct($attBoard['present'], $attBoard['total']);
 $attTone  = $attPct >= 75 ? 'good' : ($attPct >= 50 ? 'mid' : 'low');
 
-$st = db()->prepare('SELECT a.marked_at, s.name FROM attendance a JOIN students s ON s.id = a.student_id
-                      WHERE a.college_id = ? AND a.att_date = ? ORDER BY a.marked_at DESC LIMIT 5');
-$st->execute([$collegeId, date('Y-m-d')]);
-$attLatest = $st->fetchAll();
+// Five most recent check-ins among the students shown.
+$attLatest = array_filter($attRows, static fn($r) => $r['marked_at'] !== null);
+usort($attLatest, static fn($a, $b) => strcmp($b['marked_at'], $a['marked_at']));
+$attLatest = array_slice($attLatest, 0, 5);
 ?>
 <a href="<?= url($boardPage) ?>" class="att-card att-widget d-block mb-4" data-state="<?= $attBoard['present'] ? 'done' : 'ready' ?>">
   <div class="att-glow"></div>
@@ -19,7 +21,7 @@ $attLatest = $st->fetchAll();
       <div><strong><?= $attPct ?>%</strong><span>today</span></div>
     </div>
     <div class="att-info">
-      <span class="att-eyebrow"><i class="bi bi-geo-alt-fill"></i>Student Attendance · <?= e(date('d M Y')) ?></span>
+      <span class="att-eyebrow"><i class="bi bi-geo-alt-fill"></i><?= $attFaculty !== null ? 'My Students' : 'Student' ?> Attendance · <?= e(date('d M Y')) ?></span>
       <h4 class="att-title mb-1"><?= $attBoard['present'] ?> of <?= $attBoard['total'] ?> students present</h4>
       <div class="att-widget-branches">
         <?php foreach (array_slice($attBoard['branches'], 0, 6) as $b): ?>

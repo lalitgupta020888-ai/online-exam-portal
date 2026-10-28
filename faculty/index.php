@@ -48,6 +48,7 @@ foreach ($exams as $exam) {
 
 <?php $collegeId = (int)$faculty['college_id'];
       $boardPage = 'faculty/attendance.php';
+      $attFaculty = $faculty;
       require __DIR__ . '/../includes/attendance_widget.php'; ?>
 
 <div class="row g-3 mb-4">

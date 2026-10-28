@@ -129,9 +129,13 @@ function attendance_today(int $studentId): ?array
  * Every student of a college with their attendance on one day.
  * Rows carry branch_name / branch_code plus marked_at and distance_m (null = absent).
  *
+ * A faculty member ($faculty given) sees only the students of their own branch
+ * and the students on their own subject roster; the administrator sees everyone.
+ *
  * @param array{branch_id?:int,study_year?:int,semester?:int} $filters
  */
-function attendance_register(int $collegeId, string $date, array $filters = []): array
+function attendance_register(int $collegeId, string $date, array $filters = [],
+                             ?array $faculty = null): array
 {
     ensure_attendance_schema();
     $sql = 'SELECT s.id, s.name, s.enrollment_no, s.branch_id, s.study_year, s.semester,
@@ -142,6 +146,12 @@ function attendance_register(int $collegeId, string $date, array $filters = []):
          LEFT JOIN attendance a ON a.student_id = s.id AND a.att_date = ?
              WHERE s.college_id = ? AND s.is_active = 1';
     $params = [$date, $collegeId];
+    if ($faculty !== null) {
+        ensure_faculty_students_table();
+        $sql .= ' AND (s.branch_id = ? OR s.id IN
+                       (SELECT fs.student_id FROM faculty_students fs WHERE fs.faculty_id = ?))';
+        array_push($params, (int)($faculty['branch_id'] ?? 0), (int)$faculty['id']);
+    }
     foreach (['branch_id' => 's.branch_id', 'study_year' => 's.study_year',
               'semester' => 's.semester'] as $key => $col) {
         if (!empty($filters[$key])) {
