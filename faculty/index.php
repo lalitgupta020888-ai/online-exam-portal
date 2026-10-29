@@ -17,9 +17,9 @@ $exams = get_faculty_exams((int)$faculty['id']);
 
 // Headline numbers across everything this faculty member owns.
 $st = db()->prepare(
-    'SELECT COUNT(*) AS papers,
+    'SELECT COUNT(DISTINCT r.exam_id, r.student_id) AS papers,
             COALESCE(AVG(r.percentage),0) AS avg_pct,
-            SUM(CASE WHEN r.status = "PASS" THEN 1 ELSE 0 END) AS passed,
+            COUNT(DISTINCT CASE WHEN r.status = "PASS" THEN CONCAT(r.exam_id, "-", r.student_id) END) AS passed,
             SUM(r.pending_evaluation) AS pending
        FROM results r JOIN exams e ON e.id = r.exam_id
       WHERE e.faculty_id = ?'
@@ -55,7 +55,7 @@ foreach ($exams as $exam) {
   <?php foreach ([
     ['journal-text',    'text-primary', 'My Exams',        count($exams)],
     ['people',          'text-info',    'Students Assigned', $studentCount],
-    ['clipboard-data',  'text-success', 'Papers Submitted', $papers],
+    ['clipboard-data',  'text-success', 'Exam Taken (No. of Students)', $papers],
     ['graph-up',        'text-warning', 'Average Score',   num((float)$totals['avg_pct']) . '%'],
     ['patch-check',     'text-success', 'Pass Rate',       $passRate . '%'],
     ['hourglass-split', 'text-danger',  'Awaiting Evaluation', (int)$totals['pending']],
@@ -136,7 +136,7 @@ foreach ($exams as $exam) {
               <div class="row g-2 mb-3">
                 <div class="col-3"><div class="stat-card p-2">
                   <div class="value fs-6"><?= (int)$s['n'] ?></div>
-                  <div class="label">Students</div></div></div>
+                  <div class="label">Exam Taken (No. of Students)</div></div></div>
                 <div class="col-3"><div class="stat-card p-2">
                   <div class="value fs-6"><?= num((float)$s['avg_pct']) ?>%</div>
                   <div class="label">Average</div></div></div>

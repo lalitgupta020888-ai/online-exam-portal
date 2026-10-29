@@ -129,7 +129,7 @@ $st = db()->prepare(
               WHERE e.faculty_id = :f2) AS questions,
             (SELECT COUNT(DISTINCT a.student_id) FROM exam_assignments a
                JOIN exams e ON e.id = a.exam_id WHERE e.faculty_id = :f3) AS students,
-            (SELECT COUNT(*) FROM results r JOIN exams e ON e.id = r.exam_id
+            (SELECT COUNT(DISTINCT r.exam_id, r.student_id) FROM results r JOIN exams e ON e.id = r.exam_id
               WHERE e.faculty_id = :f4) AS papers'
 );
 $st->execute(['f1' => $faculty['id'], 'f2' => $faculty['id'],
@@ -171,7 +171,7 @@ require_once __DIR__ . '/includes/faculty_header.php';
           ['journal-text', 'Exams', (int)$stats['exams']],
           ['patch-question', 'Questions', (int)$stats['questions']],
           ['people', 'Students', (int)$stats['students']],
-          ['clipboard-data', 'Papers', (int)$stats['papers']],
+          ['clipboard-data', 'Exam Taken (No. of Students)', (int)$stats['papers']],
         ] as [$icon, $label, $value]): ?>
           <div class="col-3">
             <div class="stat-card p-2">

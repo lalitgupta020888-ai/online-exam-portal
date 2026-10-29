@@ -67,15 +67,15 @@ $exams = get_faculty_exams((int)$faculty['id']);
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
         <thead>
-          <tr><th>Exam</th><th>Completion</th><th>Papers</th><th>Average</th>
+          <tr><th>Exam</th><th>Completion</th><th>Exam Taken (No. of Students)</th><th>Average</th>
               <th>Passed</th><th>Results</th><th class="text-end"></th></tr>
         </thead>
         <tbody>
           <?php foreach ($exams as $ex):
               $p  = exam_progress($ex);
               $st = db()->prepare(
-                  'SELECT COUNT(*) AS n, COALESCE(AVG(percentage),0) AS avg_pct,
-                          SUM(CASE WHEN status = "PASS" THEN 1 ELSE 0 END) AS passed
+                  'SELECT COUNT(DISTINCT student_id) AS n, COALESCE(AVG(percentage),0) AS avg_pct,
+                          COUNT(DISTINCT CASE WHEN status = "PASS" THEN student_id END) AS passed
                      FROM results WHERE exam_id = ?'
               );
               $st->execute([$ex['id']]);

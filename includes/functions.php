@@ -790,9 +790,9 @@ function faculty_analytics(int $facultyId): array
 
     /* ---------------- How their students did ---------------- */
     $st = $pdo->prepare(
-        'SELECT COUNT(*) AS submissions,
+        'SELECT COUNT(DISTINCT r.exam_id, r.student_id) AS submissions,
                 COALESCE(AVG(r.percentage),0) AS avg_pct,
-                SUM(CASE WHEN r.status = "PASS" THEN 1 ELSE 0 END) AS passed
+                COUNT(DISTINCT CASE WHEN r.status = "PASS" THEN CONCAT(r.exam_id, "-", r.student_id) END) AS passed
            FROM results r JOIN exams e ON e.id = r.exam_id
           WHERE e.faculty_id = ?'
     );

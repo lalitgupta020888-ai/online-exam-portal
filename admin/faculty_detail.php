@@ -24,9 +24,9 @@ $notes = faculty_observations($a);
 /* ---------------- Papers they set ---------------- */
 $st = db()->prepare(
     'SELECT ' . exam_select_sql() . ',
-            (SELECT COUNT(*) FROM results r WHERE r.exam_id = e.id) AS submissions,
+            (SELECT COUNT(DISTINCT r.student_id) FROM results r WHERE r.exam_id = e.id) AS submissions,
             (SELECT COALESCE(AVG(r.percentage),0) FROM results r WHERE r.exam_id = e.id) AS avg_pct,
-            (SELECT SUM(CASE WHEN r.status = "PASS" THEN 1 ELSE 0 END) FROM results r
+            (SELECT COUNT(DISTINCT CASE WHEN r.status = "PASS" THEN r.student_id END) FROM results r
               WHERE r.exam_id = e.id) AS passed,
             (SELECT COUNT(*) FROM results r WHERE r.exam_id = e.id AND r.pending_evaluation = 1)
               AS pending
@@ -135,7 +135,7 @@ require_once __DIR__ . '/includes/admin_header.php';
     ['patch-question', 'text-info',    'Questions',      $a['questions']],
     ['pencil-square',  'text-warning', 'Written Qs',     $a['subjective_questions']],
     ['people',         'text-secondary','Students',      $a['students']],
-    ['clipboard-data', 'text-success', 'Papers Received', $a['submissions']],
+    ['clipboard-data', 'text-success', 'Exam Taken (No. of Students)', $a['submissions']],
     ['hourglass-split','text-danger',  'Unmarked',       $a['pending_papers']],
   ] as [$icon, $tone, $label, $value]): ?>
     <div class="col-6 col-lg-2">
@@ -291,7 +291,7 @@ require_once __DIR__ . '/includes/admin_header.php';
         <thead>
           <tr>
             <th>Paper</th><th>Questions</th><th>Marks</th><th>Allotted</th>
-            <th>Submitted</th><th>Average</th><th>Passed</th><th>Status</th>
+            <th>Exam Taken (No. of Students)</th><th>Average</th><th>Passed</th><th>Status</th>
             <th class="text-end">Question paper</th>
           </tr>
         </thead>

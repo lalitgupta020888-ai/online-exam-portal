@@ -39,8 +39,11 @@ $st = db()->prepare(
 $st->execute($params);
 $rows = $st->fetchAll();
 
-$total  = count($rows);
-$passed = count(array_filter($rows, fn($r) => $r['status'] === 'PASS'));
+// A student who took the same exam twice is counted once.
+$pairKey = fn($r) => $r['exam_id'] . '-' . $r['student_id'];
+$total   = count(array_unique(array_map($pairKey, $rows)));
+$passed  = count(array_unique(array_map($pairKey,
+               array_filter($rows, fn($r) => $r['status'] === 'PASS'))));
 $avg    = $total ? array_sum(array_column($rows, 'percentage')) / $total : 0;
 
 $exams = get_exams(false, $collegeId);
@@ -52,7 +55,7 @@ require_once __DIR__ . '/includes/admin_header.php';
 
 <div class="row g-3 mb-3">
   <?php foreach ([
-    ['clipboard-data', 'text-primary', 'Papers', $total],
+    ['clipboard-data', 'text-primary', 'Exam Taken (No. of Students)', $total],
     ['patch-check',    'text-success', 'Passed', $passed],
     ['x-octagon',      'text-danger',  'Failed', $total - $passed],
     ['graph-up',       'text-info',    'Average', num((float)$avg) . '%'],
