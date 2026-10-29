@@ -13,6 +13,7 @@ $navItems = [
     'dashboard' => ['index.php',   'speedometer2',    'Dashboard'],
     'exams'     => ['exams.php',   'journal-text',    'My Exams'],
     'evaluate'  => ['evaluate.php','pencil-square',   'Evaluate Answers'],
+    'assignments'=> ['assignments.php','file-earmark-text','Assignments'],
     'results'   => ['results.php', 'bar-chart-line',  'Results'],
     'mystudents'=> ['my_students.php','person-check', 'My Students'],
     'students'  => ['students.php','people',          'Student Analysis'],

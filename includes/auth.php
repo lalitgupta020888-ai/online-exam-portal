@@ -28,6 +28,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/college.php';
 require_once __DIR__ . '/attendance.php';
+require_once __DIR__ . '/assignments.php';
 
 /* ------------------------------------------------------------------ */
 /*  CSRF                                                               */

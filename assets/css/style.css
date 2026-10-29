@@ -1618,3 +1618,12 @@ h2 { font-weight: 800; letter-spacing: -.028em; }
   color: #fff; background: linear-gradient(135deg, #6366f1, #22d3ee);
 }
 .att-card[data-state="face"] .att-radar { opacity: .55; }
+
+/* Assignments */
+.assignment-questions, .assignment-answer {
+  white-space: normal; line-height: 1.65; padding: 1rem 1.25rem; border-radius: .75rem;
+  background: rgba(99, 102, 241, .06); border: 1px solid rgba(99, 102, 241, .15); overflow-wrap: anywhere;
+}
+.assignment-answer { background: rgba(15, 23, 42, .03); border-color: rgba(15, 23, 42, .08); max-height: 360px; overflow: auto; }
+.assignment-tile { transition: transform .15s, box-shadow .15s; }
+.assignment-tile:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(15, 23, 42, .08); }

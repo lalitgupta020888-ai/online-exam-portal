@@ -50,6 +50,12 @@ $student   = current_student();
           <a class="nav-link <?= $activeNav === 'exams' ? 'active' : '' ?>"
              href="<?= url('dashboard.php') ?>"><i class="bi bi-journal-text me-1"></i>Exams</a>
         </li>
+        <?php if ($student): ?>
+        <li class="nav-item">
+          <a class="nav-link <?= $activeNav === 'assignments' ? 'active' : '' ?>"
+             href="<?= url('assignments.php') ?>"><i class="bi bi-file-earmark-text me-1"></i>Assignments</a>
+        </li>
+        <?php endif; ?>
         <li class="nav-item">
           <a class="nav-link <?= $activeNav === 'instructions' ? 'active' : '' ?>"
              href="<?= url('instructions.php') ?>"><i class="bi bi-info-circle me-1"></i>Instructions</a>
