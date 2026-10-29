@@ -110,9 +110,9 @@ foreach ($exams as $exam) {
     <div class="row g-3 mb-4">
       <?php foreach ($ready as [$exam, $p]):
           $st = db()->prepare(
-              'SELECT COUNT(*) AS n, COALESCE(AVG(percentage),0) AS avg_pct,
+              'SELECT COUNT(DISTINCT student_id) AS n, COALESCE(AVG(percentage),0) AS avg_pct,
                       COALESCE(MAX(percentage),0) AS top,
-                      SUM(CASE WHEN status = "PASS" THEN 1 ELSE 0 END) AS passed
+                      COUNT(DISTINCT CASE WHEN status = "PASS" THEN student_id END) AS passed
                  FROM results WHERE exam_id = ?'
           );
           $st->execute([$exam['id']]);
@@ -136,7 +136,7 @@ foreach ($exams as $exam) {
               <div class="row g-2 mb-3">
                 <div class="col-3"><div class="stat-card p-2">
                   <div class="value fs-6"><?= (int)$s['n'] ?></div>
-                  <div class="label">Papers</div></div></div>
+                  <div class="label">Students</div></div></div>
                 <div class="col-3"><div class="stat-card p-2">
                   <div class="value fs-6"><?= num((float)$s['avg_pct']) ?>%</div>
                   <div class="label">Average</div></div></div>
