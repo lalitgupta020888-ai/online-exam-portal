@@ -308,6 +308,77 @@ function attendance_month(int $collegeId, string $month, array $filters = [], ?a
             'counted' => $counted, 'since' => $since];
 }
 
+/** Longest span a date range report may cover. */
+define('ATTENDANCE_RANGE_MAX_DAYS', 366);
+
+/**
+ * Read ?from= / ?to= (YYYY-MM-DD) into a valid range: never in the future,
+ * from <= to, and at most ATTENDANCE_RANGE_MAX_DAYS long. Null when not given.
+ *
+ * @return array{0:string,1:string}|null
+ */
+function attendance_range_from_get(): ?array
+{
+    $from = (string)($_GET['from'] ?? '');
+    $to   = (string)($_GET['to'] ?? '');
+    $ok   = static fn(string $d): bool => (bool)preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && strtotime($d);
+    if (!$ok($from) || !$ok($to)) {
+        return null;
+    }
+    $today = date('Y-m-d');
+    $to    = min($to, $today);
+    $from  = min($from, $to);
+    $span  = (int)((strtotime($to) - strtotime($from)) / 86400) + 1;
+    if ($span > ATTENDANCE_RANGE_MAX_DAYS) {
+        $from = date('Y-m-d', strtotime($to . ' -' . (ATTENDANCE_RANGE_MAX_DAYS - 1) . ' days'));
+    }
+    return [$from, $to];
+}
+
+/**
+ * Totals for every student between two dates (inclusive).
+ *
+ * Working days are the days of the range that are not Sundays and fall on or
+ * after the day the college started taking attendance. Each student row gets
+ * _present (days present), _absent and _pct (present / working days).
+ *
+ * @return array{students: array, counted: int, since: string, avg: int, below: int}
+ */
+function attendance_range(int $collegeId, string $from, string $to, array $filters = [],
+                          ?array $faculty = null): array
+{
+    $students = attendance_register($collegeId, $to, $filters, $faculty);
+    $since    = attendance_start_date($collegeId) ?? date('Y-m-d');
+
+    $counted = 0;
+    for ($ts = strtotime(max($from, $since)); $ts <= strtotime($to); $ts = strtotime('+1 day', $ts)) {
+        if (date('w', $ts) !== '0') {
+            $counted++;
+        }
+    }
+
+    $present = [];
+    if ($students) {
+        $ids = array_map('intval', array_column($students, 'id'));
+        $st  = db()->prepare('SELECT student_id, COUNT(*) FROM attendance
+                               WHERE college_id = ? AND att_date BETWEEN ? AND ?
+                                 AND student_id IN (' . implode(',', $ids) . ')
+                            GROUP BY student_id');
+        $st->execute([$collegeId, $from, $to]);
+        $present = array_map('intval', $st->fetchAll(PDO::FETCH_KEY_PAIR));
+    }
+    foreach ($students as &$s) {
+        $s['_present'] = $present[(int)$s['id']] ?? 0;
+        $s['_absent']  = max(0, $counted - $s['_present']);
+        $s['_pct']     = min(100, attendance_pct($s['_present'], $counted));
+    }
+    unset($s);
+
+    $avg = $students ? (int)round(array_sum(array_column($students, '_pct')) / count($students)) : 0;
+    return ['students' => $students, 'counted' => $counted, 'since' => $since, 'avg' => $avg,
+            'below' => count(array_filter($students, static fn($s) => $s['_pct'] < 75))];
+}
+
 /** First day this college took attendance: its first record or when the campus point was set. */
 function attendance_start_date(int $collegeId): ?string
 {

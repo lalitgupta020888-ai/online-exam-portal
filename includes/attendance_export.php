@@ -5,6 +5,7 @@
  *
  *   ?period=day&date=YYYY-MM-DD     one day's register
  *   ?period=month&month=YYYY-MM     the whole month as a P / A grid
+ *   ?period=range&from=..&to=..     total present, absent and % per student
  *   &format=xlsx | pdf              Excel file, or a print page ("Save as PDF")
  *   &branch_id= &study_year= &semester=   the same filters as the register
  *
@@ -12,7 +13,11 @@
  */
 require_once __DIR__ . '/result_sheet.php';      // xlsx_build(), xlsx_col()
 
-$period = ($_GET['period'] ?? '') === 'month' ? 'month' : 'day';
+$period = in_array($_GET['period'] ?? '', ['month', 'range'], true) ? $_GET['period'] : 'day';
+$range  = attendance_range_from_get();
+if ($period === 'range' && !$range) {
+    $range = [date('Y-m-01'), date('Y-m-d')];
+}
 $format = ($_GET['format'] ?? '') === 'pdf' ? 'pdf' : 'xlsx';
 $filters = [
     'branch_id'  => (int)($_GET['branch_id'] ?? 0),
@@ -47,6 +52,13 @@ if ($period === 'day') {
     $title   = 'Daily Attendance - ' . date('d M Y', strtotime($date));
     $summary = ['Students' => count($rows), 'Present' => $present, 'Absent' => count($rows) - $present,
                 'Attendance %' => attendance_pct($present, count($rows))];
+} elseif ($period === 'range') {
+    [$from, $to] = $range;
+    $rr      = attendance_range($collegeId, $from, $to, $filters, $attFaculty);
+    $rows    = $rr['students'];
+    $title   = 'Attendance Report - ' . date('d M Y', strtotime($from)) . ' to ' . date('d M Y', strtotime($to));
+    $summary = ['Students' => count($rows), 'Working days' => $rr['counted'],
+                'Average attendance %' => $rr['avg'], 'Below 75%' => $rr['below']];
 } else {
     $m       = attendance_month($collegeId, $month, $filters, $attFaculty);
     $rows    = $m['students'];
@@ -74,7 +86,8 @@ if ($period === 'day') {
 }
 
 $fileBase = preg_replace('/[^A-Za-z0-9_-]+/', '_',
-    ($college['code'] ?? 'College') . '_Attendance_' . ($period === 'day' ? $date : $month));
+    ($college['code'] ?? 'College') . '_Attendance_'
+    . ($period === 'day' ? $date : ($period === 'range' ? $range[0] . '_to_' . $range[1] : $month)));
 
 /* ===================================================================== */
 /*  Excel                                                                 */
@@ -83,6 +96,8 @@ if ($format === 'xlsx') {
     $head = ['#', 'Enrolment No.', 'Student Name', 'Branch', 'Class'];
     if ($period === 'day') {
         $head = array_merge($head, ['Status', 'Check-in', 'Distance (m)']);
+    } elseif ($period === 'range') {
+        $head = array_merge($head, ['Present', 'Absent', 'Working Days', 'Attendance %']);
     } else {
         for ($d = 1; $d <= $nDays; $d++) { $head[] = (string)$d; }
         $head = array_merge($head, ['Present', 'Working Days', '%']);
@@ -99,7 +114,7 @@ if ($format === 'xlsx') {
     // Summary boxes
     $c = 0;
     foreach ($summary as $label => $value) {
-        $span = $period === 'day' ? 1 : 2;
+        $span = $period === 'month' ? 2 : 1;
         $cells[$r][$c]     = [$label, 12];
         $cells[$r + 1][$c] = [$value, 11];
         if ($span > 1) {
@@ -123,6 +138,11 @@ if ($format === 'xlsx') {
             $line[] = [$here ? 'PRESENT' : 'ABSENT', $here ? 6 : 7];
             $line[] = [$here ? date('h:i A', strtotime($s['marked_at'])) : '—', 5];
             $line[] = [$here ? (float)$s['distance_m'] : '—', 5];
+        } elseif ($period === 'range') {
+            $line[] = [$s['_present'], 6];
+            $line[] = [$s['_absent'], $s['_absent'] ? 7 : 5];
+            $line[] = [$rr['counted'], 5];
+            $line[] = [$s['_pct'], $s['_pct'] >= 75 ? 6 : 7];
         } else {
             for ($d = 1; $d <= $nDays; $d++) {
                 if (isset($s['_days'][$d]))  { $line[] = ['P', 6]; }
@@ -149,6 +169,11 @@ if ($format === 'xlsx') {
     if (!$rows) { $cells[$r][0] = ['No students in this selection.', 9]; $r++; }
 
     $r++;
+    if ($period === 'range') {
+        $cells[$r][0] = ['Working days = days in the range except Sundays, from the day attendance began'
+                         . ' (' . date('d M Y', strtotime($rr['since'])) . '). Below 75% shown in red.', 9];
+        $r++;
+    }
     if ($period === 'month') {
         $cells[$r][0] = ['P = Present  ·  A = Absent  ·  S = Sunday  ·  % is counted over working days up to today.', 9];
         $r++;
@@ -159,12 +184,14 @@ if ($format === 'xlsx') {
     $widths = [5, 16, 26, 9, 18];
     if ($period === 'day') {
         array_push($widths, 12, 11, 12);
+    } elseif ($period === 'range') {
+        array_push($widths, 10, 10, 13, 13);
     } else {
         for ($d = 1; $d <= $nDays; $d++) { $widths[] = 4.2; }
         array_push($widths, 9, 9, 7);
     }
 
-    $data = xlsx_build($period === 'day' ? 'Daily' : 'Monthly', $cells, $merges, $widths, 0, $heights);
+    $data = xlsx_build(['day' => 'Daily', 'month' => 'Monthly', 'range' => 'Report'][$period], $cells, $merges, $widths, 0, $heights);
     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     header('Content-Disposition: attachment; filename="' . $fileBase . '.xlsx"');
     header('Content-Length: ' . strlen($data));
@@ -298,6 +325,30 @@ $xlsUrl = url(str_replace('attendance.php', 'attendance_export.php', $boardPage)
         <?php if (!$rows): ?><tr><td colspan="8">No students in this selection.</td></tr><?php endif; ?>
       </tbody>
     </table>
+<?php elseif ($period === 'range'): ?>
+    <h2>Student-wise Total Attendance</h2>
+    <table>
+      <thead><tr><th>#</th><th>Enrolment</th><th class="l">Student Name</th><th>Branch</th><th>Class</th>
+        <th>Present</th><th>Absent</th><th>Working Days</th><th>Attendance %</th></tr></thead>
+      <tbody>
+        <?php foreach ($rows as $i => $s): ?>
+          <tr>
+            <td><?= $i + 1 ?></td>
+            <td><?= e($s['enrollment_no'] ?: '—') ?></td>
+            <td class="l"><strong><?= e($s['name']) ?></strong></td>
+            <td><?= e($s['branch_code'] ?? '—') ?></td>
+            <td><?= e(attendance_class_label($s)) ?></td>
+            <td><span class="pill P"><?= $s['_present'] ?></span></td>
+            <td><?= $s['_absent'] ? '<span class="pill A">' . $s['_absent'] . '</span>' : '0' ?></td>
+            <td><?= $rr['counted'] ?></td>
+            <td class="<?= $s['_pct'] >= 75 ? 'ok' : 'low' ?>"><?= $s['_pct'] ?>%</td>
+          </tr>
+        <?php endforeach; ?>
+        <?php if (!$rows): ?><tr><td colspan="9">No students in this selection.</td></tr><?php endif; ?>
+      </tbody>
+    </table>
+    <div class="foot" style="border:0;margin-top:6px">Working days = days in the range except Sundays,
+      counted from <?= e(date('d M Y', strtotime($rr['since']))) ?> when attendance began · below 75% shown in red.</div>
 <?php else: ?>
     <h2>Day-wise Register</h2>
     <table class="month">

@@ -164,6 +164,96 @@ $exportLink = static fn(array $q): string => url($exportPage . '?' . http_build_
   </div>
 </div>
 
+<!-- -------------------------- Date range report ------------------------ -->
+<?php
+$rangeSel = attendance_range_from_get();
+[$rFrom, $rTo] = $rangeSel ?? [date('Y-m-01', strtotime($date)), $date];
+$rangeRep = $rangeSel ? attendance_range($collegeId, $rFrom, $rTo, $filters, $attFaculty) : null;
+?>
+<div class="card border-0 mb-4" id="range">
+  <div class="card-body">
+    <form method="get" action="<?= url($boardPage) ?>#range" class="row g-2 align-items-end">
+      <div class="col-12 col-lg-4">
+        <div class="d-flex align-items-center gap-3">
+          <span class="form-section-num mb-0"><i class="bi bi-calendar-range"></i></span>
+          <div>
+            <h6 class="mb-0">Date range report</h6>
+            <span class="small text-muted-2">Total attendance and % per student, with the filters above.</span>
+          </div>
+        </div>
+      </div>
+      <?php foreach (array_filter($filters) as $k => $v): ?>
+        <input type="hidden" name="<?= e($k) ?>" value="<?= (int)$v ?>">
+      <?php endforeach; ?>
+      <input type="hidden" name="date" value="<?= e($date) ?>">
+      <input type="hidden" name="period" value="range">
+      <div class="col-6 col-lg-2">
+        <label class="form-label small mb-1" for="rFrom">From</label>
+        <input type="date" class="form-control form-control-sm" id="rFrom" name="from"
+               value="<?= e($rFrom) ?>" max="<?= e(date('Y-m-d')) ?>" required>
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label small mb-1" for="rTo">To</label>
+        <input type="date" class="form-control form-control-sm" id="rTo" name="to"
+               value="<?= e($rTo) ?>" max="<?= e(date('Y-m-d')) ?>" required>
+      </div>
+      <div class="col-12 col-lg-4 d-flex flex-wrap gap-2">
+        <button class="btn btn-sm btn-primary"><i class="bi bi-eye me-1"></i>Show</button>
+        <button class="btn btn-sm btn-success" name="format" value="xlsx" formaction="<?= url($exportPage) ?>">
+          <i class="bi bi-file-earmark-excel me-1"></i>Excel</button>
+        <button class="btn btn-sm btn-outline-danger" name="format" value="pdf" formaction="<?= url($exportPage) ?>"
+                formtarget="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+      </div>
+    </form>
+
+    <?php if ($rangeRep): $rs = $rangeRep['students']; ?>
+      <hr>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div class="fw-semibold"><?= e(date('d M Y', strtotime($rFrom))) ?> – <?= e(date('d M Y', strtotime($rTo))) ?></div>
+        <div class="d-flex flex-wrap gap-3 small">
+          <span><strong><?= count($rs) ?></strong> students</span>
+          <span><strong><?= $rangeRep['counted'] ?></strong> working days</span>
+          <span>Average <strong class="att-pct <?= $ringTone($rangeRep['avg']) ?>"><?= $rangeRep['avg'] ?>%</strong></span>
+          <span class="text-danger"><strong><?= $rangeRep['below'] ?></strong> below 75%</span>
+        </div>
+      </div>
+      <?php if (!$rs): ?>
+        <p class="text-muted-2 mb-0">No students in this selection.</p>
+      <?php else: ?>
+        <div class="table-responsive" style="max-height: 480px">
+          <table class="table table-sm align-middle mb-0 att-table">
+            <thead class="sticky-top"><tr><th>#</th><th>Student</th><th>Enrolment</th><th>Branch</th><th>Class</th>
+              <th class="text-center">Present</th><th class="text-center">Absent</th>
+              <th class="text-center">Working days</th><th style="min-width: 140px">Attendance</th></tr></thead>
+            <tbody>
+              <?php foreach ($rs as $i => $st): ?>
+                <tr data-att-row>
+                  <td class="text-muted-2"><?= $i + 1 ?></td>
+                  <td class="fw-medium"><?= e($st['name']) ?></td>
+                  <td class="small text-muted-2"><?= e($st['enrollment_no'] ?: '—') ?></td>
+                  <td class="small"><?= e($st['branch_code'] ?? '—') ?></td>
+                  <td class="small"><?= e(attendance_class_label($st)) ?></td>
+                  <td class="text-center text-success fw-semibold"><?= $st['_present'] ?></td>
+                  <td class="text-center <?= $st['_absent'] ? 'text-danger' : '' ?>"><?= $st['_absent'] ?></td>
+                  <td class="text-center"><?= $rangeRep['counted'] ?></td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="att-bar flex-grow-1 <?= $ringTone($st['_pct']) ?>"><span style="width: <?= $st['_pct'] ?>%"></span></div>
+                      <span class="att-pct <?= $ringTone($st['_pct']) ?>"><?= $st['_pct'] ?>%</span>
+                    </div>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+        <div class="small text-muted-2 mt-2">Working days skip Sundays and days before attendance began
+          (<?= e(date('d M Y', strtotime($rangeRep['since']))) ?>).</div>
+      <?php endif; ?>
+    <?php endif; ?>
+  </div>
+</div>
+
 <?php if (!$board['total']): ?>
   <div class="card empty-state text-center">
     <div class="empty-state-icon"><i class="bi bi-people"></i></div>
