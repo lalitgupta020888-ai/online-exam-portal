@@ -36,6 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $a['branch_id']  = (int)post('branch_id') ?: null;
     $a['study_year'] = (int)post('study_year') ?: null;
     $a['semester']   = (int)post('semester') ?: null;
+    if (!isset(study_years()[(int)$a['study_year']])) { $a['study_year'] = null; }
+    if (!isset(semesters()[(int)$a['semester']]))     { $a['semester'] = null; }
     $a['max_marks']  = (float)post('max_marks');
     $a['is_active']  = post('is_active') === '1' ? 1 : 0;
 

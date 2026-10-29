@@ -120,18 +120,17 @@ function designations(?string $current = null): array
 /*  Year and semester                                                  */
 /* ------------------------------------------------------------------ */
 
-/** Study years a student can be in. */
+/** Study years a student can be in (a three year course). */
 function study_years(): array
 {
-    return [1 => '1st Year', 2 => '2nd Year', 3 => '3rd Year',
-            4 => '4th Year', 5 => '5th Year'];
+    return [1 => '1st Year', 2 => '2nd Year', 3 => '3rd Year'];
 }
 
-/** Semesters, labelled with the year they fall in. */
+/** Semesters - two per study year, so six in all. */
 function semesters(): array
 {
     $out = [];
-    for ($s = 1; $s <= 10; $s++) {
+    for ($s = 1; $s <= 2 * count(study_years()); $s++) {
         $out[$s] = 'Semester ' . $s;
     }
     return $out;

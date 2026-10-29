@@ -52,6 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $targetYear = (int)$exam['target_year'];
     $targetSem  = (int)$exam['target_semester'];
+    if (!isset(study_years()[$targetYear])) { $targetYear = 0; }
+    if (!isset(semesters()[$targetSem]))    { $targetSem = 0; }
 
     if ($exam['title'] === '')   { $errors['title'] = 'Enter the exam title.'; }
     if ($exam['subject'] === '') { $errors['subject'] = 'Enter the subject.'; }

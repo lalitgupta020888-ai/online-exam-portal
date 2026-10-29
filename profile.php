@@ -94,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $profileErrors['study_year'] = 'Choose your current year.';
         }
         $sem = (int)$s['semester'];
-        if ($sem < 1 || $sem > 10) {
+        if (!isset(semesters()[$sem])) {
             $profileErrors['semester'] = 'Choose your current semester.';
         }
 

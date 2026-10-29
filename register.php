@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['study_year'] = 'Choose your current year.';
     }
     $sem = (int)$old['semester'];
-    if ($sem < 1 || $sem > 10) {
+    if (!isset(semesters()[$sem])) {
         $errors['semester'] = 'Choose your current semester.';
     }
     if ($old['enrollment_no'] === '') {
