@@ -1,10 +1,10 @@
 <?php
 /**
- * POST /api/mark_attendance.php  (lat, lng, accuracy)
+ * POST /api/mark_attendance.php  (lat, lng, accuracy, face)
  *
- * Marks today's attendance for the signed in student when their reported
- * position lies within ATTENDANCE_RADIUS_M metres of the campus point the
- * college administrator saved.
+ * Marks today's attendance for the signed in student when the live face scan
+ * matches their registered face and their reported position lies within
+ * ATTENDANCE_RADIUS_M metres of the campus point the college administrator saved.
  */
 require_once __DIR__ . '/../includes/auth.php';
 
@@ -20,6 +20,11 @@ if (empty($student['aadhaar_no'])) {
               'error' => 'Add your Aadhaar number in My Account before marking attendance.'], 422);
 }
 
+if (!student_has_face($student)) {
+    json_out(['ok' => false, 'code' => 'face_missing',
+              'error' => 'Register your face in My Account before marking attendance.'], 422);
+}
+
 $college = get_college((int)$student['college_id']);
 if (!college_has_location($college)) {
     json_out(['ok' => false, 'code' => 'campus',
@@ -30,6 +35,19 @@ if ($row = attendance_today((int)$student['id'])) {
     json_out(['ok' => true, 'already' => true,
               'time' => date('h:i A', strtotime($row['marked_at'])),
               'distance' => (float)$row['distance_m']]);
+}
+
+$live = parse_face_descriptor(post('face'));
+$saved = parse_face_descriptor((string)$student['face_descriptor']);
+if (!$live || !$saved) {
+    json_out(['ok' => false, 'code' => 'face',
+              'error' => 'Your face could not be read. Face the camera in good light and try again.'], 422);
+}
+$faceDistance = face_distance($live, $saved);
+if ($faceDistance > FACE_MATCH_THRESHOLD) {
+    json_out(['ok' => false, 'code' => 'face',
+              'error' => 'Face did not match the one registered on this account. Try again in good light, '
+                       . 'or ask your college administrator to reset your face.'], 422);
 }
 
 $lat = (float)post('lat');
@@ -54,10 +72,10 @@ $now = date('Y-m-d H:i:s');
 // INSERT IGNORE: a double tap must not fail on the one-per-day key.
 db()->prepare(
     'INSERT IGNORE INTO attendance
-        (student_id, college_id, att_date, marked_at, latitude, longitude, accuracy, distance_m, ip)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        (student_id, college_id, att_date, marked_at, latitude, longitude, accuracy, distance_m, face_distance, ip)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
 )->execute([$student['id'], $college['id'], date('Y-m-d'), $now,
-            $lat, $lng, $acc, round($distance, 1), client_ip()]);
+            $lat, $lng, $acc, round($distance, 1), round($faceDistance, 3), client_ip()]);
 
 json_out(['ok' => true, 'already' => false,
           'time' => date('h:i A', strtotime($now)), 'distance' => round($distance, 1)]);

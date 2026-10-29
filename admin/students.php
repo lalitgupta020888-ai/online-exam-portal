@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/../includes/auth.php';
 $admin     = require_admin();
+ensure_attendance_schema();      // face_descriptor column on an older database
 $collegeId = (int)$admin['college_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -20,6 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'toggle') {
         db()->prepare('UPDATE students SET is_active = 1 - is_active WHERE id = ?')->execute([$sid]);
         set_flash('success', 'Student account status updated.');
+    } elseif ($action === 'face_reset') {
+        db()->prepare('UPDATE students SET face_descriptor = NULL, face_updated_at = NULL WHERE id = ?')
+            ->execute([$sid]);
+        set_flash('success', 'Face reset. The student can register their face again from My Account.');
     } elseif ($action === 'delete') {
         db()->prepare('DELETE FROM students WHERE id = ?')->execute([$sid]);
         set_flash('success', 'Student deleted along with their attempts and results.');
@@ -132,6 +137,17 @@ require_once __DIR__ . '/includes/admin_header.php';
                   <i class="bi bi-<?= (int)$s['is_active'] ? 'lock' : 'unlock' ?>"></i>
                 </button>
               </form>
+              <?php if (!empty($s['face_descriptor'])): ?>
+              <form method="post" class="d-inline">
+                <?= csrf_field() ?>
+                <input type="hidden" name="student_id" value="<?= $sid ?>">
+                <input type="hidden" name="action" value="face_reset">
+                <button class="btn btn-sm btn-outline-info" title="Reset registered face"
+                        data-confirm="Reset this student's face? They must register it again before marking attendance.">
+                  <i class="bi bi-person-bounding-box"></i>
+                </button>
+              </form>
+              <?php endif; ?>
               <form method="post" class="d-inline">
                 <?= csrf_field() ?>
                 <input type="hidden" name="student_id" value="<?= $sid ?>">

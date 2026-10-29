@@ -46,6 +46,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    /* ------------------------- Face for attendance ------------------------- */
+    if (post('action') === 'face') {
+        $face = parse_face_descriptor(post('face'));
+        $old  = student_has_face($student) ? parse_face_descriptor($student['face_descriptor']) : null;
+        if (!$face) {
+            set_flash('danger', 'Your face could not be read. Please scan again in good light.');
+        } elseif ($old && face_distance($face, $old) > FACE_MATCH_THRESHOLD) {
+            // Stops someone with the password from swapping in their own face.
+            set_flash('danger', 'This face does not match the one already registered. '
+                              . 'Ask your college administrator to reset your face, then register again.');
+        } elseif (face_owner_elsewhere($face, (int)$student['college_id'], (int)$student['id'])) {
+            set_flash('danger', 'This face is already registered to another student account.');
+        } else {
+            db()->prepare('UPDATE students SET face_descriptor = ?, face_updated_at = NOW() WHERE id = ?')
+                ->execute([json_encode($face), $student['id']]);
+            set_flash('success', 'Face registered. It will be checked every time you mark attendance.');
+        }
+        redirect('profile.php#face');
+    }
+
     /* ------------------------- Update profile ------------------------- */
     if (post('action') === 'profile') {
         $openTab = 'profile';
@@ -406,6 +426,37 @@ require_once __DIR__ . '/includes/header.php';
             </div>
           </form>
 
+          <?php $faceSaved = student_has_face($student); ?>
+          <form method="post" id="face" class="card border-0 face-card">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="face">
+            <input type="hidden" name="face" id="faceData">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="face-emblem"><i class="bi bi-person-bounding-box"></i></div>
+                <?php if ($faceSaved): ?>
+                  <span class="chip chip-success"><i class="bi bi-patch-check-fill"></i>Registered</span>
+                <?php else: ?>
+                  <span class="chip chip-warning"><i class="bi bi-exclamation-circle"></i>Required for attendance</span>
+                <?php endif; ?>
+              </div>
+              <h6 class="mb-1">Face Authentication</h6>
+              <p class="small text-muted mb-3">
+                <?php if ($faceSaved): ?>
+                  Registered on <?= e(date('d M Y', strtotime($student['face_updated_at'] ?? 'now'))) ?>.
+                  Your face is scanned and matched every time you mark attendance.
+                <?php else: ?>
+                  Scan your face once. Attendance is marked only when the live scan matches it.
+                <?php endif; ?>
+                Only a numeric face signature is stored - never a photo.
+              </p>
+              <button type="button" class="btn <?= $faceSaved ? 'btn-light btn-sm' : 'btn-primary w-100' ?>" id="faceBtn">
+                <i class="bi bi-camera me-1"></i><?= $faceSaved ? 'Re-register face' : 'Register my face' ?>
+              </button>
+              <div class="small text-danger mt-2" id="faceErr"></div>
+            </div>
+          </form>
+
           <div class="card border-0 flex-grow-1">
             <div class="card-body p-4">
               <h6 class="mb-3"><i class="bi bi-clipboard-data me-1"></i>My exam record</h6>
@@ -541,5 +592,21 @@ require_once __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
+
+<script src="<?= asset_url('assets/js/face.js') ?>"></script>
+<script>
+(function () {
+  var btn = document.getElementById('faceBtn'), err = document.getElementById('faceErr');
+  btn.addEventListener('click', function () {
+    err.textContent = '';
+    FaceScan.capture({ title: 'Register your face' }).then(function (d) {
+      document.getElementById('faceData').value = JSON.stringify(d);
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving…';
+      document.getElementById('face').submit();
+    }, function (e) { if (!e.cancelled) err.textContent = e.message; });
+  });
+})();
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -7,11 +7,18 @@
  * attendance from the dashboard - once a day, and only from within
  * ATTENDANCE_RADIUS_M metres of that point. The distance is always worked out
  * on the server; the browser only reports where it is.
+ *
+ * The student also registers their face once in My Account. Each check-in
+ * starts with a live camera scan; the browser turns the face into a 128 number
+ * descriptor (face-api.js) and the server compares it with the registered one.
  */
 
 define('ATTENDANCE_RADIUS_M', 15);
 // A fix vaguer than this cannot prove the student is inside a 15 m circle.
 define('ATTENDANCE_MAX_ACCURACY_M', 50);
+// Euclidean distance between two face descriptors; below this = same person.
+// face-api.js recommends 0.6, a stricter 0.5 keeps look-alikes out.
+define('FACE_MATCH_THRESHOLD', 0.5);
 
 /**
  * Add the location / Aadhaar columns and the attendance table on a site that
@@ -29,6 +36,8 @@ function ensure_attendance_schema(): void
         ['colleges', 'geo_accuracy',    'DECIMAL(7,1) DEFAULT NULL'],
         ['colleges', 'geo_updated_at',  'DATETIME DEFAULT NULL'],
         ['students', 'aadhaar_no',      'CHAR(12) DEFAULT NULL'],
+        ['students', 'face_descriptor', 'TEXT DEFAULT NULL'],
+        ['students', 'face_updated_at', 'DATETIME DEFAULT NULL'],
     ];
     $st = db()->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS
                           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
@@ -49,6 +58,7 @@ function ensure_attendance_schema(): void
         `longitude`  DECIMAL(10,7) NOT NULL,
         `accuracy`   DECIMAL(7,1) DEFAULT NULL,
         `distance_m` DECIMAL(7,1) NOT NULL,
+        `face_distance` DECIMAL(5,3) DEFAULT NULL,
         `ip`         VARCHAR(45) DEFAULT NULL,
         PRIMARY KEY (`id`),
         UNIQUE KEY `uq_attendance_day` (`student_id`, `att_date`),
@@ -56,6 +66,10 @@ function ensure_attendance_schema(): void
         CONSTRAINT `fk_attendance_student` FOREIGN KEY (`student_id`)
           REFERENCES `students` (`id`) ON DELETE CASCADE
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+    $st->execute(['attendance', 'face_distance']);
+    if (!(int)$st->fetchColumn()) {
+        db()->exec('ALTER TABLE `attendance` ADD COLUMN `face_distance` DECIMAL(5,3) DEFAULT NULL AFTER `distance_m`');
+    }
     $done = true;
 }
 
@@ -114,6 +128,58 @@ function valid_aadhaar(string $number): bool
 function mask_aadhaar(?string $number): string
 {
     return $number ? 'XXXX XXXX ' . substr($number, -4) : '';
+}
+
+/**
+ * A face descriptor sent by the browser (JSON array of 128 numbers), or null
+ * when it is missing or malformed.
+ *
+ * @return float[]|null
+ */
+function parse_face_descriptor(string $json): ?array
+{
+    $v = json_decode($json, true);
+    if (!is_array($v) || count($v) !== 128 || array_keys($v) !== range(0, 127)) {
+        return null;
+    }
+    foreach ($v as $x) {
+        if (!is_int($x) && !is_float($x) || !is_finite((float)$x) || abs($x) > 1) {
+            return null;
+        }
+    }
+    return array_map('floatval', $v);
+}
+
+/** Euclidean distance between two descriptors (0 = identical). */
+function face_distance(array $a, array $b): float
+{
+    $sum = 0.0;
+    foreach ($a as $i => $x) {
+        $sum += ($x - $b[$i]) ** 2;
+    }
+    return sqrt($sum);
+}
+
+/** Does the student have a registered face? */
+function student_has_face(array $student): bool
+{
+    return !empty($student['face_descriptor']);
+}
+
+/** Another student of the college whose registered face matches $face, or null. */
+function face_owner_elsewhere(array $face, int $collegeId, int $exceptStudentId): ?array
+{
+    ensure_attendance_schema();
+    $st = db()->prepare('SELECT id, name, face_descriptor FROM students
+                          WHERE college_id = ? AND id <> ? AND face_descriptor IS NOT NULL');
+    $st->execute([$collegeId, $exceptStudentId]);
+    foreach ($st->fetchAll() as $r) {
+        $other = parse_face_descriptor($r['face_descriptor']);
+        if ($other && face_distance($face, $other) <= FACE_MATCH_THRESHOLD) {
+            return $r;
+        }
+    }
+    return null;
 }
 
 /** Today's attendance row for a student, or null. */
