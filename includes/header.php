@@ -64,6 +64,15 @@ $student   = current_student();
           <a class="nav-link <?= $activeNav === 'results' ? 'active' : '' ?>"
              href="<?= url('results.php') ?>"><i class="bi bi-bar-chart me-1"></i>Results</a>
         </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle <?= $activeNav === 'department' ? 'active' : '' ?>"
+             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-building me-1"></i>Department</a>
+          <ul class="dropdown-menu shadow border-0">
+            <li><a class="dropdown-item" href="<?= url('department_electronics.php') ?>">
+              <i class="bi bi-cpu me-2"></i>Electronics</a></li>
+          </ul>
+        </li>
 
         <?php if ($student): ?>
           <li class="nav-item dropdown">
