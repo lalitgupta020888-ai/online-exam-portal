@@ -55,6 +55,17 @@ $student   = current_student();
           <a class="nav-link <?= $activeNav === 'assignments' ? 'active' : '' ?>"
              href="<?= url('assignments.php') ?>"><i class="bi bi-file-earmark-text me-1"></i>Assignments</a>
         </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle <?= $activeNav === 'elearning' ? 'active' : '' ?>"
+             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-mortarboard me-1"></i>E-Learning</a>
+          <ul class="dropdown-menu shadow border-0">
+            <li><a class="dropdown-item" href="<?= url('econtent.php') ?>">
+              <i class="bi bi-journal-richtext me-2"></i>E-Content</a></li>
+            <li><a class="dropdown-item" href="<?= url('electures.php') ?>">
+              <i class="bi bi-play-btn me-2"></i>E-Lecture</a></li>
+          </ul>
+        </li>
         <?php endif; ?>
         <li class="nav-item">
           <a class="nav-link <?= $activeNav === 'instructions' ? 'active' : '' ?>"

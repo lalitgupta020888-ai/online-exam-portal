@@ -111,7 +111,8 @@ function pdf_extract_text(string $bin): string
 
     $out = '';
     foreach ($streams as $s) {
-        if (str_contains($s, 'BT') && (str_contains($s, 'Tj') || str_contains($s, 'TJ'))) {
+        // Text is shown with Tj / TJ, or with the ' and " next-line operators.
+        if (str_contains($s, 'BT') && preg_match('/T[jJ]|\)\s*[\'"]/', $s)) {
             $out .= pdf_read_content_stream($s, $cmap) . "\n";
         }
     }

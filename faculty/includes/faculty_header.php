@@ -18,6 +18,8 @@ $navItems = [
     'mystudents'=> ['my_students.php','person-check', 'My Students'],
     'students'  => ['students.php','people',          'Student Analysis'],
     'attendance'=> ['attendance.php','calendar2-check','Attendance'],
+    'econtent'  => ['econtent.php', 'journal-richtext', 'E-Content'],
+    'electures' => ['electures.php','play-btn',        'E-Lecture'],
     'profile'   => ['profile.php', 'person-gear',     'My Profile'],
 ];
 
