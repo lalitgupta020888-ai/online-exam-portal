@@ -134,10 +134,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && post('stage') === 'save') {
                 $options = ['True', 'False'];
                 if ($correct > 1) { $correct = 0; }
             } elseif ($type === 'mcq') {
-                foreach ((array)($row['options'] ?? []) as $opt) {
+                // Drop blank options, and move the answer key with the options
+                // that remain (clearing B shifts C up to B's place).
+                $kept = [];
+                foreach ((array)($row['options'] ?? []) as $k => $opt) {
                     $opt = trim((string)$opt);
-                    if ($opt !== '') { $options[] = $opt; }
+                    if ($opt !== '') { $kept[(int)$k] = $opt; }
                 }
+                $pos     = array_search($correct, array_keys($kept), true);
+                $correct = $pos === false ? -1 : (int)$pos;
+                $options = array_values($kept);
                 // An objective question with too few options, or with no answer
                 // key chosen, cannot be graded - skip it rather than store it broken.
                 if (count($options) < 2 || !isset($options[$correct])) {

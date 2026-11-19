@@ -23,7 +23,7 @@ if (!$attempt) {
 }
 
 // Time over even if the client thinks otherwise -> record it as automatic.
-if (!$auto && seconds_left($attempt) <= -TIMER_GRACE_SECONDS) {
+if (!$auto && raw_seconds_left($attempt) <= -TIMER_GRACE_SECONDS) {
     $auto = true;
 }
 

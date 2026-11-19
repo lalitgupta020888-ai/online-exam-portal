@@ -166,6 +166,16 @@
   });
 
   /* --------------- Live client side search for admin tables --------- */
+  // Panel sidebar on phones: fold the menu behind a button.
+  document.querySelectorAll('[data-sidebar-toggle]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var bar = btn.closest('.admin-sidebar');
+      var open = bar.classList.toggle('is-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.querySelector('i').className = open ? 'bi bi-x-lg' : 'bi bi-list';
+    });
+  });
+
   var searchBox = document.getElementById('tableSearch');
   if (searchBox) {
     searchBox.addEventListener('input', function () {

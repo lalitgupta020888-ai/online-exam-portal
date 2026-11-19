@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Administrator login.
  */

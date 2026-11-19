@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Faculty - my profile: view and edit the professional details, and change
  * the account password.
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $f['qualification'],
                 $f['specialization'] !== '' ? $f['specialization'] : null,
                 $f['experience_years'] !== '' ? (float)$f['experience_years'] : null,
-                $f['joining_date'] !== '' ? date('Y-m-d', strtotime($f['joining_date'])) : null,
+                ($jd = DateTime::createFromFormat('!Y-m-d', $f['joining_date'])) ? $jd->format('Y-m-d') : null,
                 $f['about'] !== '' ? $f['about'] : null,
                 $faculty['id'],
             ]);

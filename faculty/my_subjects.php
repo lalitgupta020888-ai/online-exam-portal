@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                           subject_name = ?, subject_code = ?, subject_type = ?, periods = ?
                                     WHERE id = ? AND faculty_id = ?')
                         ->execute(array_merge($vals, [$form['id'], $facultyId]));
-                    set_flash('success', 'Subject updated.');
+                    set_flash('success', 'Subject saved.');
                 } else {
                     db()->prepare('INSERT INTO faculty_teaching (semester, study_year, branch_id, subject_name,
                                           subject_code, subject_type, periods, faculty_id, college_id, session)

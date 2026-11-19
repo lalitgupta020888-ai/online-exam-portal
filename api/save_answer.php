@@ -36,7 +36,9 @@ if ($attempt['status'] !== 'in_progress') {
     json_out(['ok' => false, 'error' => 'This examination has already been submitted.',
               'expired' => true], 409);
 }
-if (seconds_left($attempt) <= 0) {
+// The browser clock runs a second or two behind the server, so answers that
+// arrive within the grace period after the deadline are still kept.
+if (raw_seconds_left($attempt) <= -TIMER_GRACE_SECONDS) {
     grade_attempt($attemptId, 'auto_submitted');
     json_out(['ok' => false, 'error' => 'Time is over.', 'expired' => true], 409);
 }

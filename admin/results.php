@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Admin - every submitted paper, filterable by exam, student and outcome.
  */
@@ -44,7 +44,7 @@ $pairKey = fn($r) => $r['exam_id'] . '-' . $r['student_id'];
 $total   = count(array_unique(array_map($pairKey, $rows)));
 $passed  = count(array_unique(array_map($pairKey,
                array_filter($rows, fn($r) => $r['status'] === 'PASS'))));
-$avg    = $total ? array_sum(array_column($rows, 'percentage')) / $total : 0;
+$avg    = $rows ? array_sum(array_column($rows, 'percentage')) / count($rows) : 0;
 
 $exams = get_exams(false, $collegeId);
 

@@ -333,7 +333,10 @@ require_once __DIR__ . '/includes/header.php';
     FaceScan.capture({ title: 'Face authentication' }).then(function (face) {
       btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Scanning…';
       setState('scanning', 'Verifying your location…', 'Hold steady - locking on to GPS satellites.', 'bi-broadcast');
-      locate(function (c) { if (c) send(face, c); });
+      locate(function (c) {
+        if (c) { send(face, c); }
+        else { fail('Location unavailable', 'We could not get a GPS fix. Move near a window or outdoors and try again.'); }
+      });
     }, function (e) {
       if (!e.cancelled) return fail('Face scan failed', e.message);
       busy = false; btn.disabled = false;

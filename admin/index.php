@@ -38,7 +38,10 @@ $running  = (int)$one("SELECT COUNT(*) FROM attempts t JOIN exams e ON e.id = t.
                         WHERE e.college_id = :c AND t.status = 'in_progress'");
 $pendEval = (int)$one('SELECT COUNT(*) FROM results r JOIN exams e ON e.id = r.exam_id
                         WHERE e.college_id = :c AND r.pending_evaluation = 1');
-$pendFac  = (int)$one("SELECT COUNT(*) FROM faculty WHERE college_id = :c AND status='pending'");
+$pf = $pdo->prepare("SELECT COUNT(*) FROM faculty WHERE college_id = ? AND status = 'pending'
+                       AND (admin_id IS NULL OR admin_id = ?)");
+$pf->execute([$collegeId, (int)$admin['id']]);
+$pendFac  = (int)$pf->fetchColumn();
 $orphans  = (int)$one('SELECT COUNT(*) FROM exams WHERE college_id = :c AND faculty_id IS NULL');
 $unallot  = (int)$one('SELECT COUNT(*) FROM exams e WHERE e.college_id = :c AND NOT EXISTS
                         (SELECT 1 FROM exam_assignments a WHERE a.exam_id = e.id)');

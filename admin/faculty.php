@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Admin - faculty accounts: approve new registrations, suspend or delete.
  *
@@ -47,12 +47,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
 
             case 'reinstate':
-                db()->prepare("UPDATE faculty SET status = 'approved', is_active = 1 WHERE id = ?")
+                // Only a suspended account can be reinstated; a pending one needs approval.
+                if ($target['status'] !== 'suspended') {
+                    set_flash('danger', $target['name'] . ' is not suspended.');
+                    break;
+                }
+                db()->prepare("UPDATE faculty SET status = 'approved', is_active = 1
+                                WHERE id = ? AND status = 'suspended'")
                     ->execute([$id]);
                 set_flash('success', $target['name'] . ' has been reinstated.');
                 break;
 
             case 'delete':
+                // Assignments (with every student's submission and marks), E-Content
+                // and E-Lectures belong to the teacher and would be deleted with them.
+                ensure_assignment_schema();
+                ensure_elearning_schema();
+                $own = db()->prepare('SELECT (SELECT COUNT(*) FROM assignments WHERE faculty_id = ?)
+                                           + (SELECT COUNT(*) FROM e_contents  WHERE faculty_id = ?)
+                                           + (SELECT COUNT(*) FROM e_lectures  WHERE faculty_id = ?)');
+                $own->execute([$id, $id, $id]);
+                if ((int)$own->fetchColumn() > 0) {
+                    set_flash('warning', $target['name'] . ' has assignments or E-Learning material that '
+                        . 'students use, so the account cannot be deleted. Suspend it instead.');
+                    break;
+                }
                 // Their exams survive with faculty_id set to NULL (ON DELETE SET NULL),
                 // so no student loses a result because a teacher left.
                 db()->prepare('DELETE FROM faculty WHERE id = ?')->execute([$id]);

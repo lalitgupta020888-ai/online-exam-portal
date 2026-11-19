@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Admin - oversight of every question paper in the portal.
  *

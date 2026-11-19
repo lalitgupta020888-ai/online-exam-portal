@@ -13,6 +13,9 @@ $pageTitle = 'Exam Instructions';
 $activeNav = 'instructions';
 
 $examId = get_int('exam_id');
+if ($examId) {
+    require_student();   // a paper's details are only for students who may sit it
+}
 $exam   = $examId ? get_exam($examId) : null;
 
 if ($examId && (!$exam || !(int)$exam['is_active'])) {

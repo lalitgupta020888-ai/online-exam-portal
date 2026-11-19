@@ -14,6 +14,9 @@ CREATE DATABASE IF NOT EXISTS `online_exam`
 USE `online_exam`;
 
 -- Drop in reverse dependency order so the script can be re-run safely.
+-- Foreign key checks are off while dropping, because tables added by the
+-- migrations (attendance, assignments, ...) also reference these.
+SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `results`;
 DROP TABLE IF EXISTS `answers`;
 DROP TABLE IF EXISTS `attempts`;
@@ -22,6 +25,7 @@ DROP TABLE IF EXISTS `questions`;
 DROP TABLE IF EXISTS `exams`;
 DROP TABLE IF EXISTS `admins`;
 DROP TABLE IF EXISTS `students`;
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- ---------------------------------------------------------------------
 -- Students

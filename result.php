@@ -19,6 +19,7 @@ if ($attempt['status'] === 'in_progress') {
         redirect('exam.php?attempt=' . $attemptId);
     }
     grade_attempt($attemptId, 'auto_submitted');
+    $attempt = get_owned_attempt($attemptId, (int)$student['id']);
 }
 
 $st = db()->prepare('SELECT * FROM results WHERE attempt_id = ?');

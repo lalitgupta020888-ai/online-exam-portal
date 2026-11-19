@@ -76,12 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['admission_year'] = 'Enter a valid admission year.';
     }
 
-    if (strlen($password) < MIN_PASSWORD_LENGTH) {
-        $errors['password'] = 'Password must be at least ' . MIN_PASSWORD_LENGTH
-                            . ' characters long.';
-    }
-    if ($password !== $confirm) {
-        $errors['confirm_password'] = 'The two passwords do not match.';
+    foreach (password_errors($password, $confirm) as $k => $msg) {
+        $errors[$k === 'new_password' ? 'password' : $k] = $msg;
     }
 
     if (!$errors) {

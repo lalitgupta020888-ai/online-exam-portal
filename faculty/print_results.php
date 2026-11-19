@@ -55,9 +55,13 @@ if ($mode === 'exam') {
            JOIN exams e    ON e.id = r.exam_id
            JOIN attempts a ON a.id = r.attempt_id
           WHERE r.student_id = ?
+            AND (e.faculty_id = ? OR e.results_released = 1
+                 OR NOT EXISTS (SELECT 1 FROM exam_assignments x WHERE x.exam_id = e.id
+                     AND NOT EXISTS (SELECT 1 FROM attempts t WHERE t.exam_id = e.id
+                         AND t.student_id = x.student_id AND t.status <> "in_progress")))
        ORDER BY a.submitted_at ASC'
     );
-    $st->execute([$studentId]);
+    $st->execute([$studentId, $faculty['id']]);
     $rows = $st->fetchAll();
 
     $n      = count($rows);

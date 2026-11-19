@@ -79,8 +79,8 @@ $qs = db()->prepare(
             AVG(a.awarded_marks) AS avg_awarded,
             COUNT(a.id) AS responses
        FROM questions q
-  LEFT JOIN answers a ON a.question_id = q.id
-  LEFT JOIN attempts t ON t.id = a.attempt_id AND t.status <> 'in_progress'
+  LEFT JOIN (answers a JOIN attempts t ON t.id = a.attempt_id AND t.status <> 'in_progress')
+         ON a.question_id = q.id
       WHERE q.exam_id = ?
    GROUP BY q.id, q.question_text, q.type, q.marks, q.difficulty, q.category
    ORDER BY q.sort_order, q.id"

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Faculty module upgrade for an existing installation.
  *

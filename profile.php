@@ -96,6 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sem = (int)$s['semester'];
         if (!isset(semesters()[$sem])) {
             $profileErrors['semester'] = 'Choose your current semester.';
+        } elseif (isset(study_years()[$year]) && (int)ceil($sem / 2) !== $year) {
+            $profileErrors['semester'] = 'Semester ' . $sem . ' is not part of the ' . year_label($year) . '.';
         }
 
         if (!$profileErrors) {

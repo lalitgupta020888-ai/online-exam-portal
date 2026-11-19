@@ -112,7 +112,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $q['difficulty'], $q['marks'], $q['explanation'] ?: null,
                     $q['model_answer'] ?: null, $maxWords, $q['sort_order'], $id,
                 ]);
-                $pdo->prepare('DELETE FROM options WHERE question_id = ?')->execute([$id]);
             } else {
                 if ($q['sort_order'] === 0) {
                     $next = $pdo->prepare('SELECT COALESCE(MAX(sort_order),0)+1
@@ -132,14 +131,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id = (int)$pdo->lastInsertId();
             }
 
-            if ($options) {
-                $ins = $pdo->prepare(
-                    'INSERT INTO options (question_id, option_text, is_correct, option_order)
-                     VALUES (?,?,?,?)'
-                );
-                foreach ($options as $i => $text) {
-                    $ins->execute([$id, $text, $i === $correct ? 1 : 0, $i + 1]);
+            // Options are updated in place, so answers students already chose
+            // (answers.option_id) keep pointing at the same option row.
+            $old = [];
+            if ($isEdit) {
+                $st = $pdo->prepare('SELECT id FROM options WHERE question_id = ? ORDER BY option_order, id');
+                $st->execute([$id]);
+                $old = array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN));
+            }
+            $ins = $pdo->prepare(
+                'INSERT INTO options (question_id, option_text, is_correct, option_order)
+                 VALUES (?,?,?,?)'
+            );
+            $upd = $pdo->prepare('UPDATE options SET option_text = ?, is_correct = ?, option_order = ?
+                                   WHERE id = ? AND question_id = ?');
+            foreach (array_values($options) as $i => $text) {
+                $isRight = $i === $correct ? 1 : 0;
+                if (isset($old[$i])) {
+                    $upd->execute([$text, $isRight, $i + 1, $old[$i], $id]);
+                } else {
+                    $ins->execute([$id, $text, $isRight, $i + 1]);
                 }
+            }
+            $extra = array_slice($old, count($options));
+            if ($extra) {
+                $in = implode(',', array_fill(0, count($extra), '?'));
+                $pdo->prepare("DELETE FROM options WHERE id IN ($in)")->execute($extra);
             }
             $pdo->commit();
         } catch (Throwable $ex) {

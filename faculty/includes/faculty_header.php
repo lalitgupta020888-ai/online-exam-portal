@@ -52,6 +52,8 @@ $pendingCount = (int)$st->fetchColumn();
   <aside class="admin-sidebar faculty-sidebar">
     <div class="brand">
       <i class="bi bi-person-video3"></i> Faculty Panel
+      <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-label="Open menu" aria-expanded="false">
+        <i class="bi bi-list"></i></button>
     </div>
     <?php $facultyCollege = get_college((int)$faculty['college_id']); ?>
     <?php if ($facultyCollege): ?>

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Admin - deep analysis of one faculty member: the papers they set, the
  * question bank they authored, how they marked the written answers, and how

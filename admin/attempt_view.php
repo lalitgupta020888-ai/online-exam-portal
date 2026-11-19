@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Admin - read only answer sheet for one student's attempt.
  *

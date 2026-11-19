@@ -77,7 +77,9 @@ require_once __DIR__ . '/includes/header.php';
             </tr>
           </thead>
           <tbody>
-            <?php foreach ($rows as $i => $r): $pass = $r['status'] === 'PASS'; ?>
+            <?php foreach ($rows as $i => $r):
+                $pass = $r['status'] === 'PASS';
+                $pend = (int)($r['pending_evaluation'] ?? 0) === 1; ?>
               <tr>
                 <td class="text-muted-2"><?= $i + 1 ?></td>
                 <td>
@@ -93,13 +95,14 @@ require_once __DIR__ . '/includes/header.php';
                 <td style="min-width:130px">
                   <div class="d-flex align-items-center gap-2">
                     <div class="progress flex-grow-1" style="height:8px">
-                      <div class="progress-bar <?= $pass ? 'bg-success' : 'bg-danger' ?>"
+                      <div class="progress-bar <?= $pend ? 'bg-warning' : ($pass ? 'bg-success' : 'bg-danger') ?>"
                            style="width:<?= e($r['percentage']) ?>%"></div>
                     </div>
                     <span class="small fw-semibold"><?= num((float)$r['percentage']) ?>%</span>
                   </div>
                 </td>
-                <td><span class="badge <?= $pass ? 'bg-success' : 'bg-danger' ?>"><?= e($r['status']) ?></span></td>
+                <td><?php if ($pend): ?><span class="badge bg-warning text-dark">Awaiting evaluation</span>
+                    <?php else: ?><span class="badge <?= $pass ? 'bg-success' : 'bg-danger' ?>"><?= e($r['status']) ?></span><?php endif; ?></td>
                 <td class="text-end">
                   <a class="btn btn-sm btn-outline-primary"
                      href="<?= url('result.php?attempt=' . (int)$r['attempt_id']) ?>">View</a>

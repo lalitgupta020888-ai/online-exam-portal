@@ -26,7 +26,9 @@ if (!$result) {
 }
 
 $exam   = get_exam((int)$attempt['exam_id']);
-$passed = $result['status'] === 'PASS';
+$pending = (int)($result['pending_evaluation'] ?? 0) === 1;
+$passed  = $result['status'] === 'PASS';
+$verdict = $pending ? 'AWAITING EVALUATION' : $result['status'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -47,7 +49,7 @@ $passed = $result['status'] === 'PASS';
   th, td { border: 1px solid #e2e8f0; padding: 9px 12px; text-align: left; }
   th { background: #f8fafc; width: 45%; font-weight: 600; color: #475569; }
   .verdict { text-align: center; padding: 18px; border-radius: 10px; margin: 22px 0;
-             color: #fff; background: <?= $passed ? '#16a34a' : '#dc2626' ?>; }
+             color: #fff; background: <?= $pending ? '#d97706' : ($passed ? '#16a34a' : '#dc2626') ?>; }
   .verdict .big { font-size: 30px; font-weight: 800; letter-spacing: .08em; }
   .grid { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
   .box { flex: 1 1 22%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;
@@ -107,7 +109,8 @@ $passed = $result['status'] === 'PASS';
 </table>
 
 <div class="verdict">
-  <div class="big"><?= e($result['status']) ?></div>
+  <div class="big"><?= e($verdict) ?></div>
+  <?php if ($pending): ?><div>Written answers are still being marked by your faculty; marks may go up.</div><?php endif; ?>
   <div><?= num((float)$result['obtained_marks']) ?> out of <?= num((float)$result['total_marks']) ?>
        marks (<?= num((float)$result['percentage']) ?>%)</div>
 </div>

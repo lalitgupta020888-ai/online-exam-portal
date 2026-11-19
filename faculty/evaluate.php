@@ -48,7 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $qs = db()->prepare(
         "SELECT a.id AS answer_id, q.id AS question_id, q.marks
            FROM answers a JOIN questions q ON q.id = a.question_id
-          WHERE a.attempt_id = ? AND q.type = 'subjective'"
+          WHERE a.attempt_id = ? AND q.type = 'subjective'
+            AND TRIM(COALESCE(a.answer_text, '')) <> ''"   // a blank answer stays at 0
     );
     $qs->execute([$attemptId]);
 
@@ -203,7 +204,8 @@ if ($attemptId > 0) {
                          class="form-control" id="m<?= (int)$q['id'] ?>"
                          name="marks[<?= (int)$q['id'] ?>]"
                          value="<?= $q['awarded_marks'] !== null ? e(num((float)$q['awarded_marks'])) : '' ?>"
-                         placeholder="0 - <?= num((float)$q['marks']) ?>">
+                         placeholder="0 - <?= num((float)$q['marks']) ?>"
+                         <?= $ans === '' ? 'readonly title="Not answered - 0 marks"' : '' ?>>
                   <span class="input-group-text">/ <?= num((float)$q['marks']) ?></span>
                 </div>
                 <div class="btn-group btn-group-sm mb-2" role="group">

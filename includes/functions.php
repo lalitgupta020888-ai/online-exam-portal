@@ -313,10 +313,12 @@ function get_college_students(?int $collegeId, array $filters = [], string $extr
     $where  = [];
     $params = $extraParams;
 
-    if ($collegeId) {
-        $where[] = 's.college_id = ?';
-        $params[] = $collegeId;
+    // Never list every college's students for an account with no college.
+    if (!$collegeId) {
+        return [];
     }
+    $where[] = 's.college_id = ?';
+    $params[] = $collegeId;
     if (!empty($filters['branch_id'])) {
         $where[] = 's.branch_id = ?';
         $params[] = (int)$filters['branch_id'];
@@ -906,7 +908,13 @@ function faculty_observations(array $a): array
  */
 function seconds_left(array $attempt): int
 {
-    return max(0, strtotime($attempt['expires_at']) - time());
+    return max(0, raw_seconds_left($attempt));
+}
+
+/** Like seconds_left() but negative once the deadline has passed. */
+function raw_seconds_left(array $attempt): int
+{
+    return strtotime($attempt['expires_at']) - time();
 }
 
 /**

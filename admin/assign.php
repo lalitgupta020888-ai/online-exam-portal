@@ -37,13 +37,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $keep = array_values(array_unique(array_merge($selected, $lockedIds)));
 
-        if ($keep) {
-            $in = implode(',', array_fill(0, count($keep), '?'));
+        // Only students that were on screen can lose the paper; anyone hidden
+        // by the class filter keeps their allotment.
+        $shown = $_POST['shown'] ?? [];
+        if (!is_array($shown)) { $shown = []; }
+        $shown  = array_values(array_unique(array_map('intval', $shown)));
+        $remove = array_values(array_diff($shown, $keep));
+        if ($remove) {
+            $in = implode(',', array_fill(0, count($remove), '?'));
             $pdo->prepare("DELETE FROM exam_assignments
-                            WHERE exam_id = ? AND student_id NOT IN ($in)")
-                ->execute(array_merge([$examId], $keep));
-        } else {
-            $pdo->prepare('DELETE FROM exam_assignments WHERE exam_id = ?')->execute([$examId]);
+                            WHERE exam_id = ? AND student_id IN ($in)")
+                ->execute(array_merge([$examId], $remove));
         }
 
         $ins = $pdo->prepare(
@@ -150,6 +154,7 @@ require_once __DIR__ . '/includes/admin_header.php';
           <?php foreach ($students as $s): $sid = (int)$s['id']; ?>
             <tr>
               <td>
+                <input type="hidden" name="shown[]" value="<?= $sid ?>">
                 <input class="form-check-input student-check" type="checkbox"
                        name="students[]" value="<?= $sid ?>" id="stu<?= $sid ?>"
                        data-branch="<?= (int)$s['branch_id'] ?>"

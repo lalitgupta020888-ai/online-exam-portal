@@ -53,6 +53,8 @@ $pendingFaculty = (int)$pf->fetchColumn();
   <aside class="admin-sidebar">
     <div class="brand">
       <i class="bi bi-shield-lock-fill"></i> Admin Panel
+      <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-label="Open menu" aria-expanded="false">
+        <i class="bi bi-list"></i></button>
     </div>
     <?php $adminCollege = get_college((int)$admin['college_id']); ?>
     <?php if ($adminCollege): ?>

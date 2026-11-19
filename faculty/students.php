@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Faculty - every student who has been assigned any of my exams, with their
  * overall performance. Links through to one student's full analysis.

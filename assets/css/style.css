@@ -1164,6 +1164,7 @@ h2 { font-weight: 800; letter-spacing: -.028em; }
   border-bottom: 1px solid rgba(255, 255, 255, .09);
   margin-bottom: 1rem;
 }
+.sidebar-toggle { display: none; }
 .admin-sidebar .brand i {
   width: 34px; height: 34px; border-radius: 11px;
   display: grid; place-items: center;
@@ -1294,6 +1295,18 @@ h2 { font-weight: 800; letter-spacing: -.028em; }
   .admin-sidebar a { border-left: none; border-bottom: 1px solid rgba(255, 255, 255, .06); }
   .admin-sidebar a.active { border-left: none; border-bottom-color: var(--oep-gold); }
   .admin-topbar { position: static; }
+  /* Phone / tablet: the menu folds away behind a button. */
+  .admin-sidebar { position: sticky; top: 0; z-index: 1040; padding: .75rem 0 0; }
+  .admin-sidebar .brand { margin-bottom: 0; padding-bottom: .75rem; border-bottom: 0; }
+  .sidebar-toggle {
+    display: grid; place-items: center; margin-left: auto; width: 40px; height: 40px; border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .07); color: #fff; font-size: 1.4rem;
+  }
+  .admin-sidebar .brand .sidebar-toggle i { width: auto; height: auto; background: none; box-shadow: none; font-size: 1.4rem; }
+  .admin-sidebar .college-strip, .admin-sidebar nav { display: none; }
+  .admin-sidebar.is-open .college-strip { display: flex; }
+  .admin-sidebar.is-open nav { display: block; max-height: calc(100vh - 140px); overflow-y: auto; padding-bottom: .5rem; }
+  .admin-sidebar.is-open { box-shadow: 0 20px 40px -10px rgba(0, 0, 0, .5); }
   .navbar-oep .navbar-collapse { padding-top: .6rem; }
 }
 @media (max-width: 575.98px) {

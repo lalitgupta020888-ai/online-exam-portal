@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Faculty login. Accepts either the username or the registered email.
  */

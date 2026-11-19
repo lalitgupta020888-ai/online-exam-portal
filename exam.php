@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * The examination interface.
  *
