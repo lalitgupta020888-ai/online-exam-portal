@@ -40,8 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$selected) {
         set_flash('warning', 'Tick at least one student first.');
+    } elseif ($action === 'add' && !subject_allowed($facultyId, $subject)) {
+        set_flash('danger', 'Choose one of your subjects (set them in My Subject).');
     } elseif ($subject === '' || mb_strlen($subject) > 120) {
-        set_flash('danger', 'Choose or type the subject (up to 120 characters).');
+        set_flash('danger', 'Choose the subject.');
     } elseif ($action === 'add') {
         $ins = db()->prepare('INSERT IGNORE INTO faculty_students (faculty_id, student_id, subject)
                               VALUES (?,?,?)');
@@ -223,11 +225,8 @@ require_once __DIR__ . '/includes/faculty_header.php';
 
       <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
         <?php if ($view === 'all'): ?>
-          <input type="text" name="subject" class="form-control form-control-sm" style="width:220px"
-                 list="subjectList" maxlength="120" required placeholder="Subject, e.g. Data Structures">
-          <datalist id="subjectList">
-            <?php foreach ($subjects as $sub): ?><option value="<?= e($sub) ?>"><?php endforeach; ?>
-          </datalist>
+          <?= subject_select($facultyId, '', ['class' => 'form-select-sm', 'style' => 'width:240px',
+                'required' => true, 'no_autofill' => true, 'id' => 'addSubject']) ?>
           <button class="btn btn-sm btn-primary" name="action" value="add">
             <i class="bi bi-person-plus me-1"></i>Add to my list
           </button>

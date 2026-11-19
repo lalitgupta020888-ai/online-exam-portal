@@ -1845,3 +1845,67 @@ h2 { font-weight: 800; letter-spacing: -.028em; }
   .el-mode-switch { grid-template-columns: 1fr; }
   .el-thumb-sm { flex-basis: 110px; width: 110px; }
 }
+
+/* ===================== My Subject ===================== */
+.ms-hero { --el-glow-1: rgba(16, 185, 129, .45); --el-glow-2: rgba(99, 102, 241, .5); }
+.ms-session-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .75rem 1rem;
+  background: var(--oep-surface); border-radius: var(--oep-radius); box-shadow: var(--oep-shadow);
+}
+.ms-session-chip {
+  display: inline-flex; align-items: center; gap: .4rem; padding: .4rem .9rem; border-radius: 999px;
+  border: 1px solid var(--oep-line); background: var(--oep-surface-2); color: var(--oep-body);
+  font-weight: 700; font-size: .88rem; text-decoration: none; transition: all .15s;
+}
+.ms-session-chip:hover { border-color: var(--oep-primary-400); color: var(--oep-primary); }
+.ms-session-chip.active { background: var(--oep-grad-brand); border-color: transparent; color: #fff; box-shadow: 0 8px 18px -8px rgba(67, 56, 202, .7); }
+.ms-now { font-size: .62rem; text-transform: uppercase; letter-spacing: .08em; padding: .1rem .4rem; border-radius: 999px; background: #dcfce7; color: #15803d; }
+.ms-session-chip.active .ms-now { background: rgba(255, 255, 255, .22); color: #fff; }
+.ms-count { min-width: 1.4rem; padding: 0 .35rem; border-radius: 999px; background: var(--oep-primary-soft); color: var(--oep-primary); font-size: .72rem; text-align: center; }
+.ms-session-chip.active .ms-count { background: rgba(255, 255, 255, .25); color: #fff; }
+.ms-copy { display: flex; gap: .4rem; align-items: center; margin-left: auto; }
+.ms-copy select { width: auto; min-width: 7.5rem; }
+.ms-form { position: sticky; top: 90px; }
+.ms-type-pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; }
+.ms-type-pick label {
+  display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: .6rem .3rem; border-radius: 12px; cursor: pointer;
+  border: 1.5px solid var(--oep-line); background: var(--oep-surface-2); font-size: .74rem; font-weight: 700; text-align: center; transition: all .15s;
+}
+.ms-type-pick label i { font-size: 1.2rem; color: var(--oep-muted); }
+.ms-type-pick .btn-check:checked + label { border-color: var(--oep-primary-600); background: var(--oep-primary-soft); color: var(--oep-primary); box-shadow: var(--oep-ring); }
+.ms-type-pick .btn-check:checked + label i { color: var(--oep-primary-600); }
+
+.ms-term { height: 100%; background: var(--oep-surface); border-radius: var(--oep-radius-lg); box-shadow: var(--oep-shadow-md); overflow: hidden; border: 2px solid transparent; }
+.ms-term.is-running { border-color: rgba(16, 185, 129, .45); }
+.ms-term-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.1rem 1.25rem; color: #fff; }
+.ms-term-odd .ms-term-head { background: linear-gradient(135deg, #4338ca, #6366f1 55%, #0ea5e9); }
+.ms-term-even .ms-term-head { background: linear-gradient(135deg, #b45309, #d97706 50%, #c8a45c); }
+.ms-term-label { font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.ms-term-months { font-size: .82rem; opacity: .85; margin-top: .15rem; }
+.ms-term-count { font-size: 1.9rem; font-weight: 800; line-height: 1; text-align: right; }
+.ms-term-count small { display: block; font-size: .65rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; opacity: .8; }
+.ms-live { display: inline-flex; align-items: center; gap: .35rem; font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; padding: .15rem .5rem; border-radius: 999px; background: rgba(255, 255, 255, .2); }
+.ms-live span { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 0 rgba(74, 222, 128, .7); animation: ms-pulse 1.6s infinite; }
+@keyframes ms-pulse { 70% { box-shadow: 0 0 0 7px rgba(74, 222, 128, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); } }
+.ms-sem { padding: .9rem 1.1rem; border-bottom: 1px solid var(--oep-line-soft); }
+.ms-sem:last-child { border-bottom: 0; }
+.ms-sem-title { display: flex; align-items: center; gap: .55rem; font-weight: 700; font-size: .92rem; margin-bottom: .55rem; }
+.ms-sem-badge { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-size: .8rem; font-weight: 800; color: #fff; background: var(--oep-ink-3); }
+.ms-term-odd .ms-sem-badge { background: var(--oep-primary-600); }
+.ms-term-even .ms-sem-badge { background: #d97706; }
+.ms-empty { font-size: .82rem; color: var(--oep-muted); padding: .55rem .75rem; border: 1.5px dashed var(--oep-line); border-radius: 10px; text-align: center; }
+.ms-subject { display: flex; align-items: center; gap: .7rem; padding: .55rem .6rem; border-radius: 12px; background: var(--oep-surface-2); border: 1px solid var(--oep-line-soft); margin-bottom: .4rem; transition: all .15s; }
+.ms-subject:hover { border-color: var(--oep-primary-400); box-shadow: var(--oep-shadow-xs); }
+.ms-subject.is-editing { border-color: var(--oep-primary-600); box-shadow: var(--oep-ring); }
+.ms-subject-name { font-weight: 700; font-size: .92rem; }
+.ms-subject-meta { display: flex; flex-wrap: wrap; gap: .2rem .6rem; font-size: .74rem; color: var(--oep-muted); }
+.ms-code { font-weight: 700; color: var(--oep-primary); background: var(--oep-primary-soft); padding: 0 .4rem; border-radius: 6px; }
+.ms-type-dot { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-size: 1rem; }
+.ms-type-theory { background: linear-gradient(135deg, #4f46e5, #0ea5e9); }
+.ms-type-practical { background: linear-gradient(135deg, #059669, #34d399); }
+.ms-type-both { background: linear-gradient(135deg, #7c3aed, #ec4899); }
+.ms-actions { display: flex; gap: .2rem; opacity: .55; transition: opacity .15s; }
+.ms-subject:hover .ms-actions { opacity: 1; }
+.ms-actions .btn { padding: .2rem .45rem; }
+@media (max-width: 1199.98px) { .ms-form { position: static; } }
+@media (max-width: 575.98px) { .ms-copy { margin-left: 0; width: 100%; } .el-hero-stats { flex-wrap: wrap; gap: 1rem; } }

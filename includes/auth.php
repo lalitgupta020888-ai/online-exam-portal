@@ -30,6 +30,7 @@ require_once __DIR__ . '/college.php';
 require_once __DIR__ . '/attendance.php';
 require_once __DIR__ . '/assignments.php';
 require_once __DIR__ . '/elearning.php';
+require_once __DIR__ . '/my_subjects.php';
 
 /* ------------------------------------------------------------------ */
 /*  CSRF                                                               */

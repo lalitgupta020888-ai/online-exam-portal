@@ -17,7 +17,7 @@ $errors = [];
 $notice = '';
 
 $a = [
-    'title' => '', 'subject' => $faculty['department'] ?? '', 'unit' => '', 'body' => '',
+    'title' => '', 'subject' => '', 'unit' => '', 'body' => '',
     'source' => 'text', 'source_name' => '',
     'branch_id' => $faculty['branch_id'] ?? '', 'study_year' => '', 'semester' => '', 'is_active' => 1,
 ];
@@ -83,7 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         // Step 2 (or a typed note): validate and save.
         if (mb_strlen($a['title']) < 3)   { $errors['title'] = 'Give the content a title.'; }
-        if ($a['subject'] === '')         { $errors['subject'] = 'Enter the subject.'; }
+        if (!subject_allowed((int)$faculty['id'], $a['subject'], (string)($found['subject'] ?? ''))) {
+            $errors['subject'] = 'Choose one of your subjects (set them in My Subject).';
+        }
         if (mb_strlen($a['body']) < 20)   { $errors['body'] = 'Write the content, or upload a PDF to read it from.'; }
         if (mb_strlen($a['body']) > 4000000) { $errors['body'] = 'The content is too long.'; }
 
@@ -149,13 +151,7 @@ $mode = isset($errors['pdf']) ? 'pdf' : 'text';
       </div>
       <div class="col-md-3">
         <label class="form-label" for="subject">Subject</label>
-        <input type="text" class="form-control <?= $err('subject') ?>" id="subject" name="subject"
-               value="<?= e($a['subject']) ?>" list="subjectList">
-        <datalist id="subjectList">
-          <?php foreach (faculty_subjects((int)$faculty['id']) as $sub): ?>
-            <option value="<?= e($sub) ?>">
-          <?php endforeach; ?>
-        </datalist>
+        <?= subject_select((int)$faculty['id'], (string)$a['subject'], ['class' => $err('subject')]) ?>
         <?= $msg('subject') ?>
       </div>
       <div class="col-md-3">

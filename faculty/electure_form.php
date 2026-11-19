@@ -13,7 +13,7 @@ $isEdit = $id > 0;
 $errors = [];
 
 $a = [
-    'title' => '', 'subject' => $faculty['department'] ?? '', 'unit' => '', 'description' => '',
+    'title' => '', 'subject' => '', 'unit' => '', 'description' => '',
     'youtube_id' => '', 'url' => '',
     'branch_id' => $faculty['branch_id'] ?? '', 'study_year' => '', 'semester' => '', 'is_active' => 1,
 ];
@@ -38,7 +38,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($a['youtube_id'] === '')     { $errors['url'] = 'Paste a valid YouTube video link (youtube.com or youtu.be).'; }
     if (mb_strlen($a['title']) < 3)  { $errors['title'] = 'Give the lecture a title.'; }
-    if ($a['subject'] === '')        { $errors['subject'] = 'Enter the subject.'; }
+    if (!subject_allowed((int)$faculty['id'], $a['subject'], (string)($found['subject'] ?? ''))) {
+        $errors['subject'] = 'Choose one of your subjects (set them in My Subject).';
+    }
     if (mb_strlen($a['description']) > 5000) { $errors['description'] = 'Keep the description under 5,000 characters.'; }
 
     if (!$errors) {
@@ -101,13 +103,7 @@ $msg = fn($k) => isset($errors[$k]) ? '<div class="invalid-feedback d-block">' .
           </div>
           <div class="col-md-7">
             <label class="form-label" for="subject">Subject</label>
-            <input type="text" class="form-control <?= $err('subject') ?>" id="subject" name="subject"
-                   value="<?= e($a['subject']) ?>" list="subjectList">
-            <datalist id="subjectList">
-              <?php foreach (faculty_subjects((int)$faculty['id']) as $sub): ?>
-                <option value="<?= e($sub) ?>">
-              <?php endforeach; ?>
-            </datalist>
+            <?= subject_select((int)$faculty['id'], (string)$a['subject'], ['class' => $err('subject')]) ?>
             <?= $msg('subject') ?>
           </div>
           <div class="col-md-5">

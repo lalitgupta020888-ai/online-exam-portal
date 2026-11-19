@@ -11,6 +11,7 @@ $activeNav = $activeNav ?? '';
 
 $navItems = [
     'dashboard' => ['index.php',   'speedometer2',    'Dashboard'],
+    'mysubjects'=> ['my_subjects.php','book-half',     'My Subject'],
     'exams'     => ['exams.php',   'journal-text',    'My Exams'],
     'evaluate'  => ['evaluate.php','pencil-square',   'Evaluate Answers'],
     'assignments'=> ['assignments.php','file-earmark-text','Assignments'],

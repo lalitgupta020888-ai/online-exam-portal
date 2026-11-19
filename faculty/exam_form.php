@@ -10,7 +10,7 @@ $isEdit = $id > 0;
 $errors = [];
 
 $exam = [
-    'title' => '', 'subject' => $faculty['department'] ?? '', 'description' => '',
+    'title' => '', 'subject' => '', 'description' => '',
     'duration_minutes' => 30, 'marks_per_question' => 1,
     'negative_marks' => 0, 'passing_marks' => 0, 'is_active' => 1,
     'access_mode' => 'assigned',
@@ -56,7 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset(semesters()[$targetSem]))    { $targetSem = 0; }
 
     if ($exam['title'] === '')   { $errors['title'] = 'Enter the exam title.'; }
-    if ($exam['subject'] === '') { $errors['subject'] = 'Enter the subject.'; }
+    if (!subject_allowed((int)$faculty['id'], $exam['subject'], (string)($found['subject'] ?? ''))) {
+        $errors['subject'] = 'Choose one of your subjects (set them in My Subject).';
+    }
     if ($exam['duration_minutes'] < 1 || $exam['duration_minutes'] > 600) {
         $errors['duration_minutes'] = 'Duration must be between 1 and 600 minutes.';
     }
@@ -127,10 +129,9 @@ require_once __DIR__ . '/includes/faculty_header.php';
 
             <div class="col-md-4">
               <label class="form-label" for="subject">Subject</label>
-              <input type="text" id="subject" name="subject" required
-                     class="form-control <?= isset($errors['subject']) ? 'is-invalid' : '' ?>"
-                     value="<?= e($exam['subject']) ?>" placeholder="e.g. Data Structures">
-              <div class="invalid-feedback"><?= e($errors['subject'] ?? 'Enter a subject.') ?></div>
+              <?= subject_select((int)$faculty['id'], (string)$exam['subject'],
+                    ['class' => isset($errors['subject']) ? 'is-invalid' : '', 'required' => true]) ?>
+              <div class="invalid-feedback"><?= e($errors['subject'] ?? 'Choose a subject.') ?></div>
             </div>
 
             <div class="col-12">

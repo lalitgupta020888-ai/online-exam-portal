@@ -12,7 +12,7 @@ $isEdit = $id > 0;
 $errors = [];
 
 $a = [
-    'title' => '', 'subject' => $faculty['department'] ?? '', 'questions' => '',
+    'title' => '', 'subject' => '', 'questions' => '',
     'branch_id' => $faculty['branch_id'] ?? '', 'study_year' => '', 'semester' => '',
     'due_at' => date('Y-m-d\T23:59', strtotime('+7 days')), 'max_marks' => 10, 'is_active' => 1,
 ];
@@ -42,7 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $a['is_active']  = post('is_active') === '1' ? 1 : 0;
 
     if (mb_strlen($a['title']) < 3)    { $errors['title'] = 'Give the assignment a title.'; }
-    if ($a['subject'] === '')          { $errors['subject'] = 'Enter the subject.'; }
+    if (!subject_allowed((int)$faculty['id'], $a['subject'], (string)($found['subject'] ?? ''))) {
+        $errors['subject'] = 'Choose one of your subjects (set them in My Subject).';
+    }
     if (mb_strlen($a['questions']) < 5) { $errors['questions'] = 'Write the assignment questions.'; }
     $due = strtotime($a['due_at']);
     if (!$due) { $errors['due_at'] = 'Choose the last date for submission.'; }
@@ -92,13 +94,7 @@ $msg = fn($k) => isset($errors[$k]) ? '<div class="invalid-feedback">' . e($erro
       </div>
       <div class="col-md-4">
         <label class="form-label" for="subject">Subject</label>
-        <input type="text" class="form-control <?= $err('subject') ?>" id="subject" name="subject"
-               value="<?= e($a['subject']) ?>" list="subjectList" required>
-        <datalist id="subjectList">
-          <?php foreach (faculty_subjects((int)$faculty['id']) as $sub): ?>
-            <option value="<?= e($sub) ?>">
-          <?php endforeach; ?>
-        </datalist>
+        <?= subject_select((int)$faculty['id'], (string)$a['subject'], ['class' => $err('subject'), 'required' => true]) ?>
         <?= $msg('subject') ?>
       </div>
 
