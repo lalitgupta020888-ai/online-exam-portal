@@ -1,5 +1,5 @@
 -- =====================================================================
---  Online Exam Portal - Database Schema
+--  Vidyanta - Database Schema
 --  MySQL / MariaDB (XAMPP)
 --
 --  This file creates the database, all tables and the demo exam data.

@@ -15,7 +15,9 @@ $student   = current_student();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($pageTitle) ?> &middot; <?= e(APP_NAME) ?></title>
-<meta name="description" content="Take timed online examinations with instant results and detailed answer review.">
+<meta name="description" content="<?= e(APP_NAME) ?> - <?= e(APP_TAGLINE) ?>. Timed online examinations with instant results, e-content to read and e-lectures to watch.">
+<meta name="theme-color" content="#0f766e">
+<link rel="icon" type="image/svg+xml" href="<?= asset_url('assets/images/favicon.svg') ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -31,7 +33,7 @@ $student   = current_student();
       <span class="brand-badge"><i class="bi bi-mortarboard-fill"></i></span>
       <span>
         <?= e(APP_NAME) ?>
-        <span class="brand-sub">Examination Suite</span>
+        <span class="brand-sub"><?= e(APP_TAGLINE) ?></span>
       </span>
     </a>
     <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"

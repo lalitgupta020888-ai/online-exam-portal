@@ -45,7 +45,9 @@ defined('DB_PASS') || define('DB_PASS', env_or(['DB_PASS', 'MYSQLPASSWORD'], '')
 defined('DB_NAME') || define('DB_NAME', env_or('DB_NAME', 'online_exam'));
 
 // ---------- Application ----------
-define('APP_NAME', 'Online Exam Portal');
+define('APP_NAME', 'Vidyanta');
+// Shown under the name wherever the brand appears (navbar, footer, auth pages).
+define('APP_TAGLINE', 'Online Exam · E-Content · E-Lecture Portal');
 
 /**
  * Base URL path of the project as seen by the browser.
@@ -86,7 +88,7 @@ defined('SMTP_HOST')      || define('SMTP_HOST', env_or('SMTP_HOST', 'smtp.gmail
 defined('SMTP_PORT')      || define('SMTP_PORT', (int)env_or('SMTP_PORT', '465'));
 defined('SMTP_USER')      || define('SMTP_USER', env_or('SMTP_USER', ''));
 defined('SMTP_PASS')      || define('SMTP_PASS', env_or('SMTP_PASS', ''));
-defined('SMTP_FROM_NAME') || define('SMTP_FROM_NAME', env_or('SMTP_FROM_NAME', 'Online Exam Portal'));
+defined('SMTP_FROM_NAME') || define('SMTP_FROM_NAME', env_or('SMTP_FROM_NAME', 'Vidyanta'));
 
 /**
  * SMS for phone OTPs through Fast2SMS. Leave FAST2SMS_API_KEY empty to keep

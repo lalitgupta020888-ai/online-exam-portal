@@ -1,5 +1,5 @@
 /* =====================================================================
-   Online Exam Portal - examination engine
+   Vidyanta - examination engine
    ---------------------------------------------------------------------
    Handles question navigation, the palette, autosaving of answers,
    the countdown timer and submission.

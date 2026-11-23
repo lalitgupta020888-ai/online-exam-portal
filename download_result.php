@@ -40,9 +40,9 @@ $verdict = $pending ? 'AWAITING EVALUATION' : $result['status'];
   * { box-sizing: border-box; }
   body { font-family: "Segoe UI", Arial, sans-serif; color: #0f172a;
          max-width: 800px; margin: 0 auto; padding: 32px 24px; }
-  .head { text-align: center; border-bottom: 3px solid #2563eb; padding-bottom: 16px;
+  .head { text-align: center; border-bottom: 3px solid #0f766e; padding-bottom: 16px;
           margin-bottom: 24px; }
-  .head h1 { margin: 0 0 4px; font-size: 24px; color: #2563eb; }
+  .head h1 { margin: 0 0 4px; font-size: 24px; color: #0f766e; }
   .head p { margin: 0; color: #64748b; font-size: 13px; }
   h2 { font-size: 16px; margin: 24px 0 10px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 14px; }
@@ -60,7 +60,7 @@ $verdict = $pending ? 'AWAITING EVALUATION' : $result['status'];
           font-size: 11px; color: #94a3b8; text-align: center; }
   .actions { text-align: center; margin-bottom: 20px; }
   .actions button, .actions a { padding: 9px 18px; border-radius: 8px; border: 0;
-          background: #2563eb; color: #fff; font-weight: 600; cursor: pointer;
+          background: #0f766e; color: #fff; font-weight: 600; cursor: pointer;
           text-decoration: none; display: inline-block; margin: 0 4px; font-size: 14px; }
   .actions a { background: #64748b; }
   @media print { .actions { display: none; } body { padding: 0; } }

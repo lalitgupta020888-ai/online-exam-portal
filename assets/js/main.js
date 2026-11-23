@@ -1,5 +1,5 @@
 /* =====================================================================
-   Online Exam Portal - site wide behaviour
+   Vidyanta - site wide behaviour
    (Bootstrap form validation, password toggles, confirm dialogs, etc.)
    ===================================================================== */
 (function () {

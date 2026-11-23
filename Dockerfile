@@ -1,4 +1,4 @@
-# Online Exam Portal - production image
+# Vidyanta (Online Exam · E-Content · E-Lecture Portal) - production image
 # Mirrors the XAMPP stack the project was written against: Apache + PHP 8.2.
 FROM php:8.2-apache
 

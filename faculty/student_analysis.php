@@ -174,7 +174,7 @@ require_once __DIR__ . '/includes/faculty_header.php';
             <?php endforeach; ?>
 
             <?php if ($n > 1): ?>
-              <polyline points="<?= e($path) ?>" fill="none" stroke="#2563eb" stroke-width="2.5"
+              <polyline points="<?= e($path) ?>" fill="none" stroke="#0f766e" stroke-width="2.5"
                         stroke-linejoin="round" stroke-linecap="round"></polyline>
             <?php endif; ?>
 

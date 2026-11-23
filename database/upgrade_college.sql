@@ -1,5 +1,5 @@
 -- =====================================================================
---  Online Exam Portal - College (multi tenant) upgrade
+--  Vidyanta - College (multi tenant) upgrade
 --
 --  Every account, paper and result now belongs to a college. A college is
 --  created when somebody registers as its administrator, and the faculty and

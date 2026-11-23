@@ -90,21 +90,21 @@ $place = trim(implode(', ', array_filter([$college['address'] ?? '', $college['c
          margin: 0; padding: 24px 12px; font-size: 12px; }
   .sheet { max-width: 1120px; margin: 0 auto; background: #fff; border-radius: 14px;
            overflow: hidden; box-shadow: 0 10px 30px rgba(15,23,42,.15); }
-  .banner { background: linear-gradient(120deg, #1e3a8a, #2563eb 60%, #4f46e5); color: #fff;
+  .banner { background: linear-gradient(120deg, #134e4a, #0f766e 60%, #0d9488); color: #fff;
             padding: 20px 26px; display: flex; align-items: center; gap: 18px; }
   .logo { width: 70px; height: 70px; border-radius: 50%; background: #fff; flex: none;
           display: flex; align-items: center; justify-content: center; overflow: hidden;
           border: 3px solid rgba(255,255,255,.6); }
   .logo img { width: 100%; height: 100%; object-fit: contain; }
-  .logo span { color: #1e3a8a; font-weight: 800; font-size: 24px; }
+  .logo span { color: #134e4a; font-weight: 800; font-size: 24px; }
   .banner h1 { margin: 0; font-size: 24px; letter-spacing: .02em; }
   .banner .place { opacity: .85; font-size: 12px; margin-top: 2px; }
   .banner .doc { margin-left: auto; text-align: right; }
   .banner .doc b { display: block; font-size: 15px; letter-spacing: .08em; text-transform: uppercase; }
   .banner .doc span { font-size: 11px; opacity: .85; }
   .body { padding: 20px 26px 24px; }
-  h2 { font-size: 13px; margin: 18px 0 8px; color: #1e3a8a; text-transform: uppercase;
-       letter-spacing: .06em; border-left: 4px solid #2563eb; padding-left: 8px; }
+  h2 { font-size: 13px; margin: 18px 0 8px; color: #134e4a; text-transform: uppercase;
+       letter-spacing: .06em; border-left: 4px solid #0f766e; padding-left: 8px; }
   .details { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid #e2e8f0;
              border-radius: 10px; overflow: hidden; }
   .details div { padding: 7px 12px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; }
@@ -112,9 +112,9 @@ $place = trim(implode(', ', array_filter([$college['address'] ?? '', $college['c
                    letter-spacing: .04em; }
   .details strong { font-size: 12.5px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(95px, 1fr)); gap: 8px; }
-  .box { border-radius: 10px; padding: 9px 6px; text-align: center; background: #eff6ff;
-         border: 1px solid #dbeafe; }
-  .box .v { font-size: 19px; font-weight: 800; color: #1e3a8a; }
+  .box { border-radius: 10px; padding: 9px 6px; text-align: center; background: #ecf7f5;
+         border: 1px solid #cdeae5; }
+  .box .v { font-size: 19px; font-weight: 800; color: #134e4a; }
   .box .l { font-size: 9.5px; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
   .box.g { background: #f0fdf4; border-color: #bbf7d0; } .box.g .v { color: #15803d; }
   .box.r { background: #fef2f2; border-color: #fecaca; } .box.r .v { color: #b91c1c; }
@@ -122,7 +122,7 @@ $place = trim(implode(', ', array_filter([$college['address'] ?? '', $college['c
   table { width: 100%; border-collapse: collapse; }
   th, td { border: 1px solid #e2e8f0; padding: 5px 6px; text-align: center; }
   td.l, th.l { text-align: left; }
-  thead th { background: #1e3a8a; color: #fff; font-size: 9.5px; text-transform: uppercase;
+  thead th { background: #134e4a; color: #fff; font-size: 9.5px; text-transform: uppercase;
              letter-spacing: .03em; }
   tbody tr:nth-child(even) { background: #f8fafc; }
   tr.absent td { color: #94a3b8; }
@@ -140,7 +140,7 @@ $place = trim(implode(', ', array_filter([$college['address'] ?? '', $college['c
           color: #94a3b8; text-align: center; }
   .actions { text-align: center; margin-bottom: 16px; }
   .actions button, .actions a { padding: 9px 18px; border-radius: 8px; border: 0;
-          background: #2563eb; color: #fff; font-weight: 600; cursor: pointer;
+          background: #0f766e; color: #fff; font-weight: 600; cursor: pointer;
           text-decoration: none; display: inline-block; margin: 0 4px; font-size: 13px; }
   .actions a.x { background: #16a34a; }
   .actions a.b { background: #64748b; }

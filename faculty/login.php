@@ -50,6 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Faculty Login &middot; <?= e(APP_NAME) ?></title>
+<meta name="theme-color" content="#0f766e">
+<link rel="icon" type="image/svg+xml" href="<?= asset_url('assets/images/favicon.svg') ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -60,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="auth-body-faculty">
 
 <div class="auth-wrap">
+  <?= brand_lockup() ?>
   <div class="auth-card">
     <div class="text-center mb-4">
       <div class="feature-icon bg-soft-purple mx-auto"><i class="bi bi-person-video3"></i></div>

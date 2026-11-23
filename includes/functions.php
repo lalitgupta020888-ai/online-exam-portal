@@ -172,6 +172,19 @@ function change_account_password(string $table, int $id, string $current,
     return [];
 }
 
+/**
+ * The portal's brand mark - badge, name and tagline - as one link home.
+ * Used on the stand-alone pages (logins, registrations, forgot password)
+ * that do not include the main navbar, so the portal is named everywhere.
+ */
+function brand_lockup(): string
+{
+    return '<a href="' . e(url('index.php')) . '" class="brand-lockup">'
+         . '<span class="brand-badge"><i class="bi bi-mortarboard-fill"></i></span>'
+         . '<span class="brand-text"><span class="brand-name">' . e(APP_NAME) . '</span>'
+         . '<span class="brand-sub">' . e(APP_TAGLINE) . '</span></span></a>';
+}
+
 /** Initials for the avatar circle on a profile card: "Anita Verma" -> "AV". */
 function initials(string $name): string
 {

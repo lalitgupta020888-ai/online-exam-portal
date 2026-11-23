@@ -1,4 +1,6 @@
-# Online Exam Portal
+# Vidyanta
+
+**Online Exam · E-Content · E-Lecture Portal**
 
 A complete online examination / quiz system for **any number of colleges**. Each
 college registers itself, and from then on its administrator, faculty and
@@ -184,10 +186,15 @@ more than once. Delete `upgrade.php` afterwards.
 The whole portal shares one visual language, defined as CSS custom properties
 at the top of `assets/css/style.css`:
 
-* **Palette** - deep indigo/midnight chrome (`--oep-grad-ink`) with an indigo →
-  sky brand gradient and a champagne gold accent (`--oep-gold`) reserved for
-  premium moments: the brand mark, the active sidebar item, the footer rule and
-  the primary call to action.
+* **Palette - "Peacock & Saffron"** - deep teal-ink chrome (`--oep-grad-ink`)
+  with a peacock teal brand gradient (`--oep-grad-brand`, `#0b4f5c` → `#0f766e` →
+  `#14b8a6`) and a saffron copper accent (`--oep-gold`, `#e0913a`) reserved for
+  premium moments: the brand mark, the tagline, the active sidebar item, the
+  footer rule and the primary call to action. Bootstrap's own primary
+  (`--bs-primary`) follows the brand. Status colours (success, danger, warning,
+  info) are unchanged.
+* **Name** - `APP_NAME` and `APP_TAGLINE` in `config/config.php` set the name
+  and tagline shown on every page, print-out, export and email.
 * **Type** - Plus Jakarta Sans with tightened tracking on headings; content
   surfaces stay light and high contrast so a paper is comfortable to read for a
   full hour.

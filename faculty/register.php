@@ -163,6 +163,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Faculty Registration &middot; <?= e(APP_NAME) ?></title>
+<meta name="theme-color" content="#0f766e">
+<link rel="icon" type="image/svg+xml" href="<?= asset_url('assets/images/favicon.svg') ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -175,14 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="container py-5" style="max-width:940px">
 
   <div class="text-center mb-4">
-    <a href="<?= url('index.php') ?>" class="d-inline-flex align-items-center gap-2 mb-3"
-       style="color:#fff;text-decoration:none">
-      <span class="brand-badge" style="width:40px;height:40px;border-radius:13px;
-            display:grid;place-items:center;background:var(--oep-grad-brand)">
-        <i class="bi bi-mortarboard-fill"></i>
-      </span>
-      <span class="fw-bold fs-5"><?= e(APP_NAME) ?></span>
-    </a>
+    <div class="mb-3"><?= brand_lockup() ?></div>
     <h2 style="color:#fff">Faculty Registration</h2>
     <p style="color:rgba(255,255,255,.68)" class="mb-0">
       Create your teaching account - set papers, allot them to your students and

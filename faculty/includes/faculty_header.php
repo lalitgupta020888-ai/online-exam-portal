@@ -39,6 +39,8 @@ $pendingCount = (int)$st->fetchColumn();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($pageTitle) ?> &middot; Faculty &middot; <?= e(APP_NAME) ?></title>
+<meta name="theme-color" content="#0f766e">
+<link rel="icon" type="image/svg+xml" href="<?= asset_url('assets/images/favicon.svg') ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -51,7 +53,8 @@ $pendingCount = (int)$st->fetchColumn();
 <div class="admin-shell">
   <aside class="admin-sidebar faculty-sidebar">
     <div class="brand">
-      <i class="bi bi-person-video3"></i> Faculty Panel
+      <i class="bi bi-person-video3"></i>
+      <span class="brand-text"><?= e(APP_NAME) ?><span class="brand-role">Faculty Panel</span></span>
       <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-label="Open menu" aria-expanded="false">
         <i class="bi bi-list"></i></button>
     </div>

@@ -1,4 +1,4 @@
-# Deploying the Online Exam Portal
+# Deploying Vidyanta (Online Exam · E-Content · E-Lecture Portal)
 
 The app is a stock PHP 8 + MySQL application, so it runs on anything that can
 serve PHP and reach a MySQL server. The [`Dockerfile`](Dockerfile) reproduces

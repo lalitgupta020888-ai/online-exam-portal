@@ -207,7 +207,7 @@ require_once __DIR__ . '/includes/header.php';
   <div class="container">
     <div class="card border-0 p-4 p-md-5 text-center position-relative overflow-hidden"
          style="background:var(--oep-grad-ink)">
-      <div style="position:absolute;inset:0;background:radial-gradient(30rem 16rem at 50% -30%,rgba(79,70,229,.6),transparent 62%)"></div>
+      <div style="position:absolute;inset:0;background:radial-gradient(30rem 16rem at 50% -30%,rgba(13, 148, 136,.6),transparent 62%)"></div>
       <div class="position-relative">
         <span class="eyebrow" style="color:var(--oep-gold)">Get started</span>
         <h3 class="text-white mb-2">Ready to test your knowledge?</h3>

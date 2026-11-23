@@ -9,7 +9,13 @@
                 display:grid;place-items:center;background:var(--oep-grad-brand);color:#fff">
             <i class="bi bi-mortarboard-fill"></i>
           </span>
-          <?= e(APP_NAME) ?>
+          <span>
+            <?= e(APP_NAME) ?>
+            <span class="d-block fw-semibold text-uppercase"
+                  style="font-size:.6rem;letter-spacing:.12em;color:var(--oep-gold);margin-top:.2rem">
+              <?= e(APP_TAGLINE) ?>
+            </span>
+          </span>
         </h5>
         <p class="mb-3 small" style="max-width:26rem">
           A complete examination suite: faculty set and allot the papers, students

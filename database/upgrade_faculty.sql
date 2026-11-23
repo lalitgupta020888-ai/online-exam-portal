@@ -1,5 +1,5 @@
 -- =====================================================================
---  Online Exam Portal - Faculty module upgrade
+--  Vidyanta - Faculty module upgrade
 --
 --  Adds: faculty accounts, exam ownership, per student exam assignment,
 --        subjective questions and manual evaluation.

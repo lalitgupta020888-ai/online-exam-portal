@@ -50,7 +50,7 @@
   var mark = cfg.mark.replace(/[<>&"]/g, '');
   var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="380" height="210">' +
     '<text x="190" y="105" text-anchor="middle" transform="rotate(-24 190 105)" ' +
-    'font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="rgba(67,56,202,0.10)">' +
+    'font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="rgba(15, 118, 110,0.10)">' +
     mark + '</text></svg>';
   document.getElementById('watermark').style.backgroundImage =
     'url("data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) + '")';

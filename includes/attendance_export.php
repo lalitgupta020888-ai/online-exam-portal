@@ -220,30 +220,30 @@ $xlsUrl = url(str_replace('attendance.php', 'attendance_export.php', $boardPage)
          margin: 0; padding: 24px 12px; font-size: 11.5px; }
   .sheet { max-width: <?= $period === 'month' ? 1180 : 900 ?>px; margin: 0 auto; background: #fff; border-radius: 14px;
            overflow: hidden; box-shadow: 0 10px 30px rgba(15,23,42,.15); }
-  .banner { background: linear-gradient(120deg, #0b1020, #1e2748 55%, #4338ca); color: #fff;
+  .banner { background: linear-gradient(120deg, #061a1b, #133437 55%, #0f766e); color: #fff;
             padding: 18px 24px; display: flex; align-items: center; gap: 16px; }
   .logo { width: 62px; height: 62px; border-radius: 50%; background: #fff; flex: none; display: flex;
-          align-items: center; justify-content: center; overflow: hidden; border: 3px solid #c8a45c; }
+          align-items: center; justify-content: center; overflow: hidden; border: 3px solid #e0913a; }
   .logo img { width: 100%; height: 100%; object-fit: contain; }
-  .logo span { color: #1e2748; font-weight: 800; font-size: 22px; }
+  .logo span { color: #133437; font-weight: 800; font-size: 22px; }
   .banner h1 { margin: 0; font-size: 21px; }
   .banner .place { opacity: .8; font-size: 11px; margin-top: 2px; }
   .banner .doc { margin-left: auto; text-align: right; }
-  .banner .doc b { display: block; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: #e6cf9a; }
+  .banner .doc b { display: block; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: #f6c47a; }
   .banner .doc span { font-size: 11px; opacity: .85; }
   .body { padding: 16px 22px 22px; }
-  h2 { font-size: 12px; margin: 16px 0 8px; color: #1e2748; text-transform: uppercase;
-       letter-spacing: .06em; border-left: 4px solid #c8a45c; padding-left: 8px; }
+  h2 { font-size: 12px; margin: 16px 0 8px; color: #133437; text-transform: uppercase;
+       letter-spacing: .06em; border-left: 4px solid #e0913a; padding-left: 8px; }
   .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .box { border-radius: 10px; padding: 8px 6px; text-align: center; background: #eef0ff; border: 1px solid #dfe3ff; }
-  .box .v { font-size: 18px; font-weight: 800; color: #312e81; }
+  .box { border-radius: 10px; padding: 8px 6px; text-align: center; background: #e6f5f2; border: 1px solid #cdeae4; }
+  .box .v { font-size: 18px; font-weight: 800; color: #134e4a; }
   .box .l { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
   .box.g { background: #f0fdf4; border-color: #bbf7d0; } .box.g .v { color: #15803d; }
   .box.r { background: #fef2f2; border-color: #fecaca; } .box.r .v { color: #b91c1c; }
   table { width: 100%; border-collapse: collapse; }
   th, td { border: 1px solid #e2e8f0; padding: 4px 5px; text-align: center; }
   td.l, th.l { text-align: left; }
-  thead th { background: #1e2748; color: #fff; font-size: 9px; text-transform: uppercase; letter-spacing: .03em; }
+  thead th { background: #133437; color: #fff; font-size: 9px; text-transform: uppercase; letter-spacing: .03em; }
   tbody tr:nth-child(even) { background: #f8fafc; }
   thead { display: table-header-group; }
   tr { page-break-inside: avoid; }
@@ -254,13 +254,13 @@ $xlsUrl = url(str_replace('attendance.php', 'attendance_export.php', $boardPage)
   .month td.l { padding-left: 4px; font-size: 9.5px; white-space: nowrap; }
   .month td.P { font-weight: 700; } .month td.A { font-weight: 700; }
   .month td.S, .month th.S { background: #f1f5f9; color: #94a3b8; }
-  .month tfoot td { background: #eef0ff; font-weight: 700; color: #312e81; }
+  .month tfoot td { background: #e6f5f2; font-weight: 700; color: #134e4a; }
   .low { color: #b91c1c; font-weight: 700; } .ok { color: #15803d; font-weight: 700; }
   .signs { display: flex; justify-content: space-between; margin-top: 40px; padding: 0 10px; }
   .signs div { width: 190px; border-top: 1px solid #334155; text-align: center; padding-top: 4px; font-size: 10.5px; color: #334155; }
   .foot { margin-top: 16px; border-top: 1px dashed #cbd5e1; padding-top: 8px; font-size: 9.5px; color: #94a3b8; text-align: center; }
   .actions { text-align: center; margin-bottom: 16px; }
-  .actions button, .actions a { padding: 9px 18px; border-radius: 8px; border: 0; background: #4338ca; color: #fff;
+  .actions button, .actions a { padding: 9px 18px; border-radius: 8px; border: 0; background: #0f766e; color: #fff;
           font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; margin: 0 4px; font-size: 13px; }
   .actions a.x { background: #16a34a; } .actions a.b { background: #64748b; }
   @media print {
