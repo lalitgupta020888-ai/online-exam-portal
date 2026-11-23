@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-<link href="<?= url('assets/css/style.css') ?>" rel="stylesheet">
+<link href="<?= asset_url('assets/css/style.css') ?>" rel="stylesheet">
 </head>
 <body class="auth-body-faculty">
 
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?= brand_lockup() ?>
   <div class="auth-card">
     <div class="text-center mb-4">
-      <div class="feature-icon bg-soft-purple mx-auto"><i class="bi bi-person-video3"></i></div>
+      <div class="feature-icon bg-soft-primary mx-auto"><i class="bi bi-person-video3"></i></div>
       <h3 class="mb-1">Faculty Login</h3>
       <p class="text-muted-2 small mb-0">Set papers, evaluate answers and review results.</p>
     </div>
